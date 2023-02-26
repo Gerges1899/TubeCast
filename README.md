@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # tube_cast
 
 A new Flutter project.
@@ -14,3 +15,6 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+=======
+# TubeCast
+>>>>>>> f459aebd65578e0f6cfb38b0a4f46fe23a3eb129
