@@ -38,6 +38,10 @@ dependencies:
   cupertino_icons: ^1.0.2
   youtube_api: ^1.0.4
   flutter_svg: ^2.0.2
+  youtube_explode_dart: ^1.12.3
+  audioplayers: ^3.0.1
+  just_audio: ^0.9.31
+  
 
 dev_dependencies:
   flutter_test:
@@ -49,6 +53,18 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
+  icons_launcher: ^2.1.0
+
+icons_launcher:
+  image_path: 'assets/icon.svg'
+  platforms:
+    android:
+      enable: true
+      image_path: 'assets/icon.svg'
+      adaptive_background_color: '#000000'
+      adaptive_foreground_image: 'assets/icon.svg'
+      adaptive_monochrome_image: 'assets/icon.svg'
+
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -57,7 +73,10 @@ dev_dependencies:
 flutter:
   assets:
      - assets/
-
+  fonts:
+      - family: Gotham
+        fonts:
+          - asset: fonts/GothamMedium.ttf
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
