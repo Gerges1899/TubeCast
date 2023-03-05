@@ -43,6 +43,11 @@ dependencies:
   just_audio: ^0.9.31
   just_audio_background: ^0.0.1-beta.9
   audio_video_progress_bar: ^1.0.0
+  connectivity_plus: ^3.0.3
+  youtube_data_api: ^1.0.4
+  # dropdown_pro: ^1.6.0
+  searchfield: ^0.7.5
+
   
 
 dev_dependencies:
