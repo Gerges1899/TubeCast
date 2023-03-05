@@ -115,10 +115,88 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        drawer: Builder(builder: (BuildContext context) {
+          return Drawer(
+            backgroundColor: Colors.black,
+            child: ListView(padding: EdgeInsets.zero, children: [
+              DrawerHeader(
+                decoration: BoxDecoration(color: Color(0xff252525)),
+                child: Container(
+                    padding: EdgeInsets.all(20),
+                    child: SvgPicture.asset(
+                      'assets/Horizontal.svg',
+                      fit: BoxFit.scaleDown,
+                    )),
+              ),
+              Transform.translate(
+                  offset: Offset(0, -15),
+                  child: Divider(
+                    color: Colors.white,
+                    thickness: 3,
+                  )),
+              ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                      alignment: Alignment.centerLeft,
+                      backgroundColor: Colors.transparent),
+                  onPressed: () async {
+                    setState(() {
+                      ff.unfocus();
+                      Scaffold.of(context).closeDrawer();
+                      clicked = false;
+                      _isLoading = true;
+                      height = 80;
+                      notFound = false;
+                    });
+
+                    videoResult = await ytApi.getTrends(regionCode: 'US');
+
+                    setState(
+                      () {
+                        _isLoading = false;
+                        trending = true;
+                        controller.clear();
+                        suggestions.clear();
+                      },
+                    );
+                  },
+                  icon: Icon(
+                    Icons.trending_up,
+                    size: 30,
+                  ),
+                  label: Text(
+                    'Trending',
+                    style: TextStyle(fontSize: 20, fontFamily: 'Gotham'),
+                  )),
+              Padding(padding: EdgeInsets.only(top: 15)),
+              ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                      alignment: Alignment.centerLeft,
+                      backgroundColor: Colors.transparent),
+                  onPressed: () {},
+                  icon: Icon(
+                    Icons.file_download_sharp,
+                    size: 30,
+                  ),
+                  label: Text(
+                    'Downloads',
+                    style: TextStyle(fontSize: 20, fontFamily: 'Gotham'),
+                  ))
+            ]),
+          );
+        }),
         appBar: AppBar(
-            leading: Icon(
-              Icons.menu,
-              size: 30,
+            leading: Builder(
+              builder: (BuildContext context) {
+                return IconButton(
+                  iconSize: 30,
+                  icon: const Icon(
+                    Icons.menu,
+                  ),
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
+                );
+              },
             ),
             centerTitle: true,
             actions: [
@@ -226,20 +304,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                       color: Colors.white,
                                       onPressed: () async {
                                         setState(() {
-                                          ff.unfocus();
-                                          clicked = false;
                                           _isLoading = true;
                                           height = 80;
                                           notFound = false;
                                         });
 
-                                        videoResult = await ytApi.getTrends(
-                                            regionCode: 'US');
-
                                         setState(
                                           () {
                                             _isLoading = false;
-                                            trending = true;
                                             controller.clear();
                                             suggestions.clear();
                                           },
@@ -252,210 +324,245 @@ class _MyHomePageState extends State<MyHomePage> {
                     preferredSize:
                         Size.fromHeight(0), // here the desired height
                     child: SizedBox.shrink())),
-        body: Stack(alignment: AlignmentDirectional.bottomCenter, children: [
-          Container(
-              color: Colors.black,
-              child: Center(
-                  child: ListView(children: [
-                if (connected == ConnectivityResult.wifi ||
-                    connected == ConnectivityResult.mobile) ...[
-                  if (trending && !_isLoading) ...[
-                    Padding(
-                        padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
-                        child: Text(
-                          'Trending Right Now ..',
-                          style: TextStyle(
-                              color: Colors.white, fontFamily: 'Gotham'),
-                        ))
-                  ] else if (!trending && !_isLoading) ...[
-                    if (!notFound) ...[
-                      Padding(
-                          padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
-                          child: Text(
-                            'Your Search Results ..',
-                            style: TextStyle(
-                                color: Colors.white, fontFamily: 'Gotham'),
-                          ))
-                    ] else ...[
-                      Padding(
-                          padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
-                          child: Text(
-                            'No Results was found.\nTry searching with different key words, Sorry.',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontFamily: 'Gotham',
-                                height: 1.5),
-                          ))
-                    ]
-                  ]
-                ] else ...[
-                  Padding(
-                      padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
-                      child: Text(
-                        'No Internet Connection..\nBut you can still enjoy your downloaded videos.',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Gotham',
-                            height: 1.5),
-                      ))
-                ],
-                if (connected == ConnectivityResult.wifi ||
-                    connected == ConnectivityResult.mobile) ...[
-                  if (!_isLoading &&
-                      [ConnectivityResult.wifi, ConnectivityResult.mobile]
-                          .contains(connected)) ...[
-                    for (int i = 0; i < videoResult.length; i++) ...[
-                      Container(
-                          height: 285,
-                          padding: EdgeInsets.fromLTRB(28, 15, 28, 0),
-                          child: GestureDetector(
-                              onTap: () async {
-                                setState(() {
-                                  _isAudioLoading = true;
-                                  current = i;
-                                  playingNow = videoResult[current];
-                                  playerr.stop();
-                                });
-                                var manifest = await yt.videos.streamsClient
-                                    .getManifest(videoResult[i].url);
-                                var streamInfo =
-                                    manifest.audioOnly.withHighestBitrate();
-                                setState(() {
-                                  _isAudioLoading = false;
-                                  playing = true;
-                                });
+        body: Builder(builder: (BuildContext context) {
+          return GestureDetector(
+              onPanUpdate: (details) {
+                if (details.delta.dx > 10) {
+                  Scaffold.of(context).openDrawer();
+                }
+              },
+              child: Stack(
+                  alignment: AlignmentDirectional.bottomCenter,
+                  children: [
+                    Container(
+                        color: Colors.black,
+                        child: Center(
+                            child: ListView(children: [
+                          if (connected == ConnectivityResult.wifi ||
+                              connected == ConnectivityResult.mobile) ...[
+                            if (trending && !_isLoading) ...[
+                              Padding(
+                                  padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
+                                  child: Text(
+                                    'Trending Right Now ..',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: 'Gotham'),
+                                  ))
+                            ] else if (!trending && !_isLoading) ...[
+                              if (!notFound) ...[
+                                Padding(
+                                    padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
+                                    child: Text(
+                                      'Your Search Results ..',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontFamily: 'Gotham'),
+                                    ))
+                              ] else ...[
+                                Padding(
+                                    padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
+                                    child: Text(
+                                      'No Results was found.\nTry searching with different key words, Sorry.',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontFamily: 'Gotham',
+                                          height: 1.5),
+                                    ))
+                              ]
+                            ]
+                          ] else ...[
+                            Padding(
+                                padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
+                                child: Text(
+                                  'No Internet Connection..\nBut you can still enjoy your downloaded videos.',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: 'Gotham',
+                                      height: 1.5),
+                                ))
+                          ],
+                          if (connected == ConnectivityResult.wifi ||
+                              connected == ConnectivityResult.mobile) ...[
+                            if (!_isLoading &&
+                                [
+                                  ConnectivityResult.wifi,
+                                  ConnectivityResult.mobile
+                                ].contains(connected)) ...[
+                              for (int i = 0; i < videoResult.length; i++) ...[
+                                Container(
+                                    height: 285,
+                                    padding: EdgeInsets.fromLTRB(28, 15, 28, 0),
+                                    child: GestureDetector(
+                                        onTap: () async {
+                                          setState(() {
+                                            _isAudioLoading = true;
+                                            current = i;
+                                            playingNow = videoResult[current];
+                                            playerr.stop();
+                                          });
+                                          var manifest = await yt
+                                              .videos.streamsClient
+                                              .getManifest(videoResult[i].url);
+                                          var streamInfo = manifest.audioOnly
+                                              .withHighestBitrate();
+                                          setState(() {
+                                            _isAudioLoading = false;
+                                            playing = true;
+                                          });
 
-                                playerr.setAudioSource(
-                                    ConcatenatingAudioSource(children: [
-                                  AudioSource.uri(streamInfo.url,
-                                      tag: MediaItem(
-                                          id: videoResult[i].id!,
-                                          title: removeUnicodeApostrophes(
-                                              videoResult[i].title),
-                                          artist: removeUnicodeApostrophes(
-                                              videoResult[i].channelTitle),
-                                          artUri: Uri.parse(videoResult[i]
-                                              .thumbnail
-                                              .medium
-                                              .url!)))
-                                ]));
+                                          playerr.setAudioSource(
+                                              ConcatenatingAudioSource(
+                                                  children: [
+                                                AudioSource.uri(streamInfo.url,
+                                                    tag: MediaItem(
+                                                        id: videoResult[i].id!,
+                                                        title:
+                                                            removeUnicodeApostrophes(
+                                                                videoResult[i]
+                                                                    .title),
+                                                        artist:
+                                                            removeUnicodeApostrophes(
+                                                                videoResult[i]
+                                                                    .channelTitle),
+                                                        artUri: Uri.parse(
+                                                            videoResult[i]
+                                                                .thumbnail
+                                                                .medium
+                                                                .url!)))
+                                              ]));
 
-                                setState(() {
-                                  play = true;
-                                });
-                                playerr.play();
-                              },
-                              child: Card(
-                                  elevation: 50,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                  color: Color(0xff252525),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Stack(
-                                          alignment:
-                                              AlignmentDirectional.bottomCenter,
-                                          children: [
-                                            Stack(
-                                                alignment: AlignmentDirectional
-                                                    .bottomStart,
-                                                children: [
-                                                  Stack(
-                                                      alignment:
-                                                          AlignmentDirectional
-                                                              .center,
-                                                      children: [
-                                                        ClipRRect(
-                                                            borderRadius: BorderRadius.only(
-                                                                topLeft: Radius
-                                                                    .circular(
-                                                                        5),
-                                                                topRight: Radius
-                                                                    .circular(
-                                                                        5)),
-                                                            child: FadeInImage.assetNetwork(
-                                                                image:
-                                                                    videoResult[
-                                                                            i]
-                                                                        .thumbnail
-                                                                        .medium
-                                                                        .url!,
-                                                                placeholder:
-                                                                    'assets/placeholder.png',
-                                                                height: 180,
-                                                                fit: BoxFit
-                                                                    .fitHeight)),
-                                                        Center(
-                                                            child: CircleAvatar(
-                                                          radius: 27,
-                                                          backgroundColor:
-                                                              Color(0xff1DB954),
-                                                          child: Icon(
-                                                            Icons.play_arrow,
-                                                            color: Colors.white,
-                                                            size: 40,
-                                                          ),
-                                                        )),
-                                                      ]),
-                                                  Container(
+                                          setState(() {
+                                            play = true;
+                                          });
+                                          playerr.play();
+                                        },
+                                        child: Card(
+                                            elevation: 50,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            ),
+                                            color: Color(0xff252525),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Stack(
                                                     alignment:
-                                                        Alignment.centerRight,
-                                                    padding: EdgeInsets.only(
-                                                        bottom: 5, right: 5),
-                                                    child: Text(
-                                                      videoResult[i]
-                                                          .duration
-                                                          .toString(),
-                                                      style: TextStyle(
-                                                          color: Colors.white),
-                                                    ),
-                                                  ),
-                                                ]),
-                                            Transform.translate(
-                                                offset: Offset(0, 8),
-                                                child: Divider(
-                                                  color: Color(0xff1DB954),
-                                                  thickness: 3,
-                                                ))
-                                          ]),
-                                      Flex(
-                                          direction: Axis.horizontal,
-                                          children: [
-                                            Expanded(
-                                                child: Padding(
-                                                    padding:
-                                                        EdgeInsets.fromLTRB(
-                                                            20, 15, 20, 2),
-                                                    child: RichText(
-                                                      maxLines: 2,
-                                                      text: TextSpan(
-                                                          locale: Locale('en'),
-                                                          text:
-                                                              removeUnicodeApostrophes(
-                                                                  videoResult[i]
-                                                                      .title),
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              height: 1.5)),
-                                                    )))
-                                          ])
-                                    ],
-                                  ))))
-                    ]
-                  ] else ...[
-                    Center(
-                        child: Transform.translate(
-                            offset: Offset(0, 25),
-                            child: CircularProgressIndicator())),
-                  ]
-                ]
-              ]))),
-          play ? player() : SizedBox.shrink()
-        ]));
+                                                        AlignmentDirectional
+                                                            .bottomCenter,
+                                                    children: [
+                                                      Stack(
+                                                          alignment:
+                                                              AlignmentDirectional
+                                                                  .bottomStart,
+                                                          children: [
+                                                            Stack(
+                                                                alignment:
+                                                                    AlignmentDirectional
+                                                                        .center,
+                                                                children: [
+                                                                  ClipRRect(
+                                                                      borderRadius: BorderRadius.only(
+                                                                          topLeft: Radius.circular(
+                                                                              5),
+                                                                          topRight: Radius.circular(
+                                                                              5)),
+                                                                      child: FadeInImage.assetNetwork(
+                                                                          image: videoResult[i]
+                                                                              .thumbnail
+                                                                              .medium
+                                                                              .url!,
+                                                                          placeholder:
+                                                                              'assets/placeholder.png',
+                                                                          height:
+                                                                              180,
+                                                                          fit: BoxFit
+                                                                              .fitHeight)),
+                                                                  Center(
+                                                                      child:
+                                                                          CircleAvatar(
+                                                                    radius: 27,
+                                                                    backgroundColor:
+                                                                        Color(
+                                                                            0xff1DB954),
+                                                                    child: Icon(
+                                                                      Icons
+                                                                          .play_arrow,
+                                                                      color: Colors
+                                                                          .white,
+                                                                      size: 40,
+                                                                    ),
+                                                                  )),
+                                                                ]),
+                                                            Container(
+                                                              alignment: Alignment
+                                                                  .centerRight,
+                                                              padding: EdgeInsets
+                                                                  .only(
+                                                                      bottom: 5,
+                                                                      right: 5),
+                                                              child: Text(
+                                                                videoResult[i]
+                                                                    .duration
+                                                                    .toString(),
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white),
+                                                              ),
+                                                            ),
+                                                          ]),
+                                                      Transform.translate(
+                                                          offset: Offset(0, 8),
+                                                          child: Divider(
+                                                            color: Color(
+                                                                0xff1DB954),
+                                                            thickness: 3,
+                                                          ))
+                                                    ]),
+                                                Flex(
+                                                    direction: Axis.horizontal,
+                                                    children: [
+                                                      Expanded(
+                                                          child: Padding(
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .fromLTRB(
+                                                                          20,
+                                                                          15,
+                                                                          20,
+                                                                          2),
+                                                              child: RichText(
+                                                                maxLines: 2,
+                                                                text: TextSpan(
+                                                                    locale:
+                                                                        Locale(
+                                                                            'en'),
+                                                                    text: removeUnicodeApostrophes(
+                                                                        videoResult[i]
+                                                                            .title),
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        height:
+                                                                            1.5)),
+                                                              )))
+                                                    ])
+                                              ],
+                                            ))))
+                              ]
+                            ] else ...[
+                              Center(
+                                  child: Transform.translate(
+                                      offset: Offset(0, 25),
+                                      child: CircularProgressIndicator())),
+                            ]
+                          ]
+                        ]))),
+                    play ? player() : SizedBox.shrink()
+                  ]));
+        }));
   }
 
   String removeUnicodeApostrophes(String strInput) {
