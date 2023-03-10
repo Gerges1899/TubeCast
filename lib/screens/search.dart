@@ -142,6 +142,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    print('width : ${MediaQuery.of(context).size.width}');
+    print('height : ${MediaQuery.of(context).size.height}');
+
     return Scaffold(
         drawer: Builder(builder: (BuildContext context) {
           return Drawer(
@@ -696,10 +699,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                           color: Colors.redAccent,
                                         ),
                                         onPressed: () {
+                                          bool pl = i.path.split('/').last ==
+                                              playerr.sequenceState!
+                                                  .currentSource!.tag.title;
                                           Playlist!.removeAt(files.indexOf(i));
                                           File(i.path).delete();
                                           files = dir!.listSync();
-                                          playerr.pause();
+                                          if (pl) {
+                                            playerr.stop();
+                                            dplay = false;
+                                          }
                                           setState(() {});
                                         }),
                                   ],
@@ -1199,6 +1208,21 @@ class _MyHomePageState extends State<MyHomePage> {
                                       await streams.pipe(fileStream);
                                       await fileStream.flush();
                                       await fileStream.close();
+                                      files = dir!.listSync();
+                                      Playlist!.add(AudioSource.uri(
+                                          Uri.parse(
+                                              'storage/emulated/0/Download/Tubify/' +
+                                                  removeUnicodeApostrophes(
+                                                      playingNow!.title) +
+                                                  ".mp3"),
+                                          tag: MediaItem(
+                                              id: 'storage/emulated/0/Download/Tubify/' +
+                                                  removeUnicodeApostrophes(
+                                                      playingNow!.title) +
+                                                  ".mp3",
+                                              title: removeUnicodeApostrophes(
+                                                      playingNow!.title) +
+                                                  ".mp3")));
                                       setState(() {
                                         _isAudioDownloading = false;
                                       });
