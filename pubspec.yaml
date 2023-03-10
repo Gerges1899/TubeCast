@@ -47,6 +47,9 @@ dependencies:
   youtube_data_api: ^1.0.4
   # dropdown_pro: ^1.6.0
   searchfield: ^0.7.5
+  permission_handler: ^10.2.0
+  path_provider: ^2.0.13
+  focused_menu_custom: ^1.2.0
 
   
 
