@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:tube_cast/screens/search.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:path_provider/path_provider.dart' as pathProvider;
+import 'package:flutter_downloader/flutter_downloader.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,12 @@ void main() async {
     androidNotificationChannelName: 'Audio playback',
     androidNotificationOngoing: true,
   );
+  await FlutterDownloader.initialize(
+      debug:
+          true, // optional: set to false to disable printing logs to console (default: true)
+      ignoreSsl:
+          true // option: set to false to disable working with http links (default: false)
+      );
   runApp(const MyApp());
 }
 
@@ -38,7 +45,7 @@ class MyApp extends StatelessWidget {
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
         colorScheme:
-            ThemeData().colorScheme.copyWith(primary: Color(0xff1DB954)),
+            ThemeData().colorScheme.copyWith(primary: Color(0xff3e4da0)),
       ),
       home: const MyHomePage(),
     );

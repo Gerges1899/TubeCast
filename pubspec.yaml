@@ -50,7 +50,9 @@ dependencies:
   permission_handler: ^10.2.0
   path_provider: ^2.0.13
   focused_menu_custom: ^1.2.0
-
+  ionicons: ^0.2.2
+  flutter_downloader: ^1.10.2
+  lecle_downloads_path_provider: ^0.0.2+8
   
 
 dev_dependencies:
@@ -66,14 +68,14 @@ dev_dependencies:
   icons_launcher: ^2.1.0
 
 icons_launcher:
-  image_path: 'assets/icon.svg'
+  image_path: 'assets/icon.png'
   platforms:
     android:
       enable: true
-      image_path: 'assets/icon.svg'
+      image_path: 'assets/icon.png'
       adaptive_background_color: '#000000'
-      adaptive_foreground_image: 'assets/icon.svg'
-      adaptive_monochrome_image: 'assets/icon.svg'
+      adaptive_foreground_image: 'assets/icon.png'
+      adaptive_monochrome_image: 'assets/icon.png'
 
 
 # For information on the generic Dart part of this file, see the

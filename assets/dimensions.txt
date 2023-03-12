@@ -1,2 +1,173 @@
-width : 384.0
-height : 838.4
+Stack(alignment: AlignmentDirectional.topCenter, children: [
+                    Stack(
+                        alignment: AlignmentDirectional.bottomCenter,
+                        children: [
+                          Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                    height: MediaQuery.of(context).size.height *
+                                        (1.3 / 3),
+                                    padding: EdgeInsets.only(
+                                        top: 120, right: 20, left: 20),
+                                    child: CircleAvatar(
+                                        radius: 120,
+                                        backgroundColor: Colors.transparent,
+                                        child: Icon(
+                                          Ionicons.musical_notes_outline,
+                                          color: Colors.white,
+                                          size: 120,
+                                        ))),
+                                Transform.translate(
+                                    offset: Offset(0, 40),
+                                    child: SizedBox(
+                                        width: 340,
+                                        child: RichText(
+                                          text: TextSpan(
+                                              locale: Locale('en'),
+                                              text: title,
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  height: 1.5,
+                                                  fontSize: 16)),
+                                        ))),
+                              ]),
+                          Container(
+                              height: 240,
+                              child: Column(children: [
+                                StreamBuilder<DurationState>(
+                                  stream: _durationState,
+                                  builder: (context, snapshot) {
+                                    final durationState = snapshot.data;
+                                    final progress = durationState?.progress ??
+                                        Duration.zero;
+                                    final buffered = Duration.zero;
+                                    final total = durationState?.total ??
+                                        playerr.duration ??
+                                        Duration.zero;
+
+                                    return Padding(
+                                        padding: EdgeInsets.only(
+                                            left: 20, right: 20, bottom: 25),
+                                        child: ProgressBar(
+                                          timeLabelPadding: 5,
+                                          timeLabelTextStyle:
+                                              TextStyle(color: Colors.white),
+                                          progress: progress,
+                                          buffered: buffered,
+                                          total: total,
+                                          progressBarColor: Color(0xff141414),
+                                          baseBarColor:
+                                              Colors.white.withOpacity(0.24),
+                                          bufferedBarColor:
+                                              Colors.white.withOpacity(0.24),
+                                          thumbColor: Colors.white,
+                                          barHeight: 5.0,
+                                          thumbRadius: 7,
+                                          onSeek: (duration) {
+                                            playerr.seek(duration);
+                                          },
+                                        ));
+                                  },
+                                ),
+                                StreamBuilder<DurationState>(
+                                    stream: _durationState,
+                                    builder: (context, snapshot) {
+                                      final durationState = snapshot.data;
+                                      final progress =
+                                          durationState?.progress ??
+                                              Duration.zero;
+                                      final buffered = Duration.zero;
+                                      final total = durationState?.total ??
+                                          playerr.duration ??
+                                          Duration.zero;
+
+                                      return Wrap(
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
+                                          spacing: 30,
+                                          children: [
+                                            if (playerr.hasPrevious) ...[
+                                              IconButton(
+                                                onPressed: () {
+                                                  if (progress <
+                                                      Duration(seconds: 5)) {
+                                                    playerr.seekToPrevious();
+                                                  } else {
+                                                    playerr.seek(Duration.zero);
+                                                  }
+                                                },
+                                                icon: Icon(Ionicons
+                                                    .play_skip_back_outline),
+                                                color: Colors.white,
+                                                iconSize: 50,
+                                              ),
+                                            ] else ...[
+                                              SizedBox(
+                                                width: 66,
+                                              )
+                                            ],
+                                            playing
+                                                ? IconButton(
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        playerr.pause();
+                                                        playing = !playing;
+                                                      });
+                                                    },
+                                                    icon: Icon(
+                                                        Ionicons.pause_outline),
+                                                    color: Colors.white,
+                                                    iconSize: 50,
+                                                  )
+                                                : IconButton(
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        playerr.play();
+                                                        playing = !playing;
+                                                      });
+                                                    },
+                                                    icon: Icon(
+                                                        Ionicons.play_outline),
+                                                    color: Colors.white,
+                                                    iconSize: 50,
+                                                  ),
+                                            if (playerr.hasNext) ...[
+                                              IconButton(
+                                                onPressed: () async {
+                                                  playerr.seekToNext();
+                                                },
+                                                icon: Icon(Ionicons
+                                                    .play_skip_forward_outline),
+                                                color: Colors.white,
+                                                iconSize: 50,
+                                              )
+                                            ] else ...[
+                                              SizedBox(
+                                                width: 66,
+                                              )
+                                            ],
+                                          ]);
+                                    })
+                              ])),
+                        ]),
+                    Padding(
+                        padding: EdgeInsets.only(right: 5, left: 5),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  height = 80;
+                                });
+                              },
+                              icon: Icon(Ionicons.chevron_down_outline),
+                              color: Colors.white,
+                              iconSize: 30,
+                            ),
+                          ],
+                        ))
+                  ]
+                  )

@@ -1,7 +1,11 @@
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:tube_cast/constants.dart';
 import 'package:youtube_api/youtube_api.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -17,6 +21,8 @@ import 'package:searchfield/searchfield.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:focused_menu_custom/focused_menu.dart';
 import 'package:focused_menu_custom/modals.dart';
+import 'package:ionicons/ionicons.dart';
+import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -43,26 +49,52 @@ class _MyHomePageState extends State<MyHomePage> {
   bool dplay = false;
   bool playing = false;
   int current = -1;
+  int downloadIndex = -1;
   double height = 80;
   bool notFound = false;
   bool visible = true;
   bool downloads = false;
   ConcatenatingAudioSource? Playlist = null;
-
+  ReceivePort _port = ReceivePort();
   String title = '';
   ConnectivityResult connected = ConnectivityResult.none;
   Stream<DurationState>? _durationState;
-
   List<String> suggestions = [];
   var yt = YoutubeExplode();
   final playerr = AudioPlayer();
-
   AudioOnlyStreamInfo? stream = null;
   Widget playicon = Icon(Icons.pause);
   Directory? dir;
   List<FileSystemEntity> files = [];
   @override
   void initState() {
+    IsolateNameServer.registerPortWithName(
+        _port.sendPort, 'downloader_send_port');
+    _port.listen((dynamic data) {
+      String id = data[0];
+      DownloadTaskStatus status = data[1];
+      int progress = data[2];
+      if (status == DownloadTaskStatus.complete) {
+        try {
+          Playlist!.add(AudioSource.uri(
+              Uri.parse('${dir!.path}/Tubify/' +
+                  removeUnicodeApostrophes(videoResult[downloadIndex].title) +
+                  ".mp3"),
+              tag: MediaItem(
+                  id: '${dir!.path}/Tubify/' +
+                      removeUnicodeApostrophes(
+                          videoResult[downloadIndex].title) +
+                      ".mp3",
+                  title: removeUnicodeApostrophes(
+                          videoResult[downloadIndex].title) +
+                      ".mp3")));
+          files = dir!.listSync();
+        } catch (err) {}
+      }
+      setState(() {});
+    });
+
+    FlutterDownloader.registerCallback(downloadCallback);
     controller.addListener(
       () async {
         try {
@@ -118,8 +150,10 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
     playerr.sequenceStateStream.listen((event) {
-      title = event!.currentSource!.tag.title;
-      setState(() {});
+      if (event!.currentSource != null) {
+        title = event.currentSource!.tag.title;
+        setState(() {});
+      }
     });
     super.initState();
   }
@@ -132,6 +166,25 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
+  @pragma('vm:entry-point')
+  static void downloadCallback(
+      String id, DownloadTaskStatus status, int progress) {
+    final SendPort? send =
+        IsolateNameServer.lookupPortByName('downloader_send_port');
+    send!.send([id, status, progress]);
+  }
+
+  Future download(String url, String name) async {
+    await FlutterDownloader.enqueue(
+      url: url,
+      fileName: name,
+      headers: {},
+      savedDir: dir!.path,
+      showNotification: true,
+      openFileFromNotification: false,
+    );
+  }
+
   @override
   void reassemble() {
     // TODO: implement reassemble
@@ -142,16 +195,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    print('width : ${MediaQuery.of(context).size.width}');
-    print('height : ${MediaQuery.of(context).size.height}');
-
     return Scaffold(
         drawer: Builder(builder: (BuildContext context) {
           return Drawer(
             backgroundColor: Colors.black,
             child: ListView(padding: EdgeInsets.zero, children: [
               DrawerHeader(
-                decoration: BoxDecoration(color: Color(0xff252525)),
+                decoration: BoxDecoration(color: Colors.black),
                 child: Container(
                     padding: EdgeInsets.all(20),
                     child: SvgPicture.asset(
@@ -192,11 +242,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     );
                   },
                   icon: Icon(
-                    Icons.trending_up,
+                    Ionicons.trending_up_outline,
                     size: 30,
                   ),
                   label: Text(
-                    'Trending',
+                    'Trending Music',
                     style: TextStyle(fontSize: 20, fontFamily: 'Gotham'),
                   )),
               Padding(padding: EdgeInsets.only(top: 15)),
@@ -215,7 +265,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     });
                   },
                   icon: Icon(
-                    Icons.search,
+                    Ionicons.search_outline,
                     size: 30,
                   ),
                   label: Text(
@@ -240,7 +290,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     setState(() {});
                   },
                   icon: Icon(
-                    Icons.file_download_sharp,
+                    Ionicons.cloud_download_outline,
                     size: 30,
                   ),
                   label: Text(
@@ -251,12 +301,13 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         }),
         appBar: AppBar(
+            toolbarHeight: kToolbarHeight + 3,
             leading: Builder(
               builder: (BuildContext context) {
                 return IconButton(
-                  iconSize: 30,
+                  iconSize: 40,
                   icon: const Icon(
-                    Icons.menu,
+                    Ionicons.reorder_two_outline,
                   ),
                   onPressed: () {
                     Scaffold.of(context).openDrawer();
@@ -270,7 +321,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ? IconButton(
                       iconSize: 30,
                       icon: Icon(
-                        Icons.close,
+                        Ionicons.close_outline,
                         size: 30,
                         color: Colors.white,
                       ),
@@ -282,10 +333,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       },
                     )
                   : IconButton(
-                      iconSize: 30,
+                      iconSize: 25,
                       icon: Icon(
-                        Icons.search,
-                        size: 30,
+                        Ionicons.search,
+                        size: 28,
                         color: Colors.white,
                       ),
                       onPressed: () {
@@ -296,11 +347,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       },
                     )
             ],
-            backgroundColor: Color(0xff252525),
+            backgroundColor: Colors.black,
             title: SvgPicture.asset(
               'assets/tubifylogo.svg',
-              height: 28,
-              width: 150,
+              height: 32,
+              width: 200,
             ),
             bottom: clicked
                 ? PreferredSize(
@@ -309,7 +360,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         padding: EdgeInsets.fromLTRB(15, 10, 15, 10),
                         child: SearchField<String>(
                             focusNode: ff,
-                            marginColor: Color(0xff252525),
+                            marginColor: Color(0xff141414),
                             suggestions: downloads
                                 ? []
                                 : suggestions
@@ -320,7 +371,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                               e,
                                               style: TextStyle(
                                                   height: 1.5,
-                                                  color: Color(0xff252525),
+                                                  color: Color(0xff141414),
                                                   fontFamily: 'Gotham'),
                                             ))))
                                     .toList(),
@@ -376,7 +427,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 borderSide:
                                     BorderSide(width: 1, color: Colors.white),
                               ),
-                              fillColor: Color(0xff252525),
+                              fillColor: Colors.transparent,
                               filled: true,
                               hintText: 'Search',
                               hintStyle: TextStyle(color: Colors.white),
@@ -401,7 +452,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                           },
                                         );
                                       },
-                                      icon: const Icon(Icons.clear)),
+                                      icon: const Icon(Ionicons.close)),
                             ))),
                   )
                 : PreferredSize(
@@ -429,7 +480,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 Padding(
                                     padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
                                     child: Text(
-                                      'Trending Right Now ..',
+                                      'Trending music Right Now ..',
                                       style: TextStyle(
                                           color: Colors.white,
                                           fontFamily: 'Gotham'),
@@ -479,177 +530,240 @@ class _MyHomePageState extends State<MyHomePage> {
                                 for (int i = 0;
                                     i < videoResult.length;
                                     i++) ...[
-                                  Container(
-                                      height: 285,
-                                      padding:
-                                          EdgeInsets.fromLTRB(28, 15, 28, 0),
-                                      child: GestureDetector(
-                                          onTap: () async {
-                                            setState(() {
-                                              _isAudioDownloading = false;
-                                              _isAudioLoading = true;
-                                              current = i;
-                                              playingNow = videoResult[current];
-                                              playerr.stop();
-                                              nowVideo = videoResult;
-                                              dplay = false;
-                                              play = true;
-                                            });
-                                            var manifest = await yt
-                                                .videos.streamsClient
-                                                .getManifest(
-                                                    videoResult[i].url);
-                                            var streamInfo = manifest.audioOnly
-                                                .withHighestBitrate();
-                                            setState(() {
-                                              _isAudioLoading = false;
-                                              playing = true;
-                                            });
-                                            stream = streamInfo;
-                                            playerr.setAudioSource(
-                                                ConcatenatingAudioSource(
-                                                    children: [
-                                                  AudioSource.uri(
-                                                      streamInfo.url,
-                                                      tag: MediaItem(
-                                                          id: videoResult[i]
-                                                              .id!,
-                                                          title:
-                                                              removeUnicodeApostrophes(
+                                  FocusedMenuHolder(
+                                      menuItemExtent: 45,
+                                      menuWidth:
+                                          MediaQuery.of(context).size.width,
+                                      animateMenuItems: true,
+                                      blurSize: 0.25,
+                                      blurBackgroundColor: Colors.black54,
+                                      menuOffset: -20,
+                                      borderColor: Color(0xff141414),
+                                      openWithTap: false,
+                                      onPressed: () {},
+                                      menuItems: <FocusedMenuItem>[
+                                        FocusedMenuItem(
+                                            backgroundColor: Color(0xff141414),
+                                            title: Text(
+                                              "Download",
+                                              style: TextStyle(
+                                                  color: Color(0xff3e4da0)),
+                                            ),
+                                            trailingIcon: Icon(
+                                              Ionicons.cloud_download_outline,
+                                              color: Color(0xff3e4da0),
+                                            ),
+                                            onPressed: () async {
+                                              setState(() {
+                                                _isAudioDownloading = true;
+                                                downloadIndex = i;
+                                              });
+                                              await _createFolder();
+                                              var manifest = await yt
+                                                  .videos.streamsClient
+                                                  .getManifest(
+                                                      videoResult[i].url);
+                                              var streamInfo = manifest
+                                                  .audioOnly
+                                                  .withHighestBitrate();
+                                              stream = streamInfo;
+
+                                              await download(
+                                                  stream!.url.toString(),
+                                                  removeUnicodeApostrophes(
+                                                          videoResult[i]
+                                                              .title) +
+                                                      ".mp3");
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    Future.delayed(
+                                                        Duration(
+                                                            milliseconds: 500),
+                                                        () {
+                                                      Navigator.of(context)
+                                                          .pop(true);
+                                                    });
+                                                    return AlertDialog(
+                                                      backgroundColor:
+                                                          Color(0xff141414),
+                                                      title: Text(
+                                                        'audio is started to download..',
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 12),
+                                                      ),
+                                                    );
+                                                  });
+                                              setState(() {
+                                                _isAudioDownloading = false;
+                                              });
+                                            }),
+                                      ],
+                                      child: Container(
+                                          height: 285,
+                                          padding: EdgeInsets.fromLTRB(
+                                              28, 15, 28, 0),
+                                          child: GestureDetector(
+                                              onTap: () async {
+                                                setState(() {
+                                                  _isAudioDownloading = false;
+                                                  _isAudioLoading = true;
+                                                  current = i;
+                                                  playingNow =
+                                                      videoResult[current];
+                                                  playerr.stop();
+                                                  nowVideo = videoResult;
+                                                  dplay = false;
+                                                  play = true;
+                                                });
+                                                var manifest = await yt
+                                                    .videos.streamsClient
+                                                    .getManifest(
+                                                        videoResult[i].url);
+                                                var streamInfo = manifest
+                                                    .audioOnly
+                                                    .withHighestBitrate();
+                                                setState(() {
+                                                  _isAudioLoading = false;
+                                                  playing = true;
+                                                });
+                                                stream = streamInfo;
+                                                playerr.setAudioSource(
+                                                    ConcatenatingAudioSource(
+                                                        children: [
+                                                      AudioSource.uri(
+                                                          streamInfo.url,
+                                                          tag: MediaItem(
+                                                              id: videoResult[i]
+                                                                  .id!,
+                                                              title: removeUnicodeApostrophes(
                                                                   videoResult[i]
                                                                       .title),
-                                                          artist: removeUnicodeApostrophes(
-                                                              videoResult[i]
-                                                                  .channelTitle),
-                                                          artUri: Uri.parse(
-                                                              videoResult[i]
-                                                                  .thumbnail
-                                                                  .medium
-                                                                  .url!)))
-                                                ]));
+                                                              artist: removeUnicodeApostrophes(
+                                                                  videoResult[i]
+                                                                      .channelTitle),
+                                                              artUri: Uri.parse(
+                                                                  videoResult[i]
+                                                                      .thumbnail
+                                                                      .medium
+                                                                      .url!)))
+                                                    ]));
 
-                                            playerr.play();
-                                          },
-                                          child: Card(
-                                              elevation: 50,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(5),
-                                              ),
-                                              color: Color(0xff252525),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Stack(
-                                                      alignment:
-                                                          AlignmentDirectional
-                                                              .bottomCenter,
-                                                      children: [
-                                                        Stack(
-                                                            alignment:
-                                                                AlignmentDirectional
-                                                                    .bottomStart,
-                                                            children: [
-                                                              Stack(
-                                                                  alignment:
-                                                                      AlignmentDirectional
-                                                                          .center,
-                                                                  children: [
-                                                                    ClipRRect(
-                                                                        borderRadius: BorderRadius.only(
-                                                                            topLeft: Radius.circular(
-                                                                                5),
-                                                                            topRight: Radius.circular(
-                                                                                5)),
-                                                                        child: FadeInImage.assetNetwork(
-                                                                            image: videoResult[i]
-                                                                                .thumbnail
-                                                                                .medium
-                                                                                .url!,
-                                                                            placeholder:
-                                                                                'assets/placeholder.png',
-                                                                            height:
-                                                                                180,
-                                                                            fit:
-                                                                                BoxFit.fitHeight)),
-                                                                    Center(
-                                                                        child:
-                                                                            CircleAvatar(
-                                                                      radius:
-                                                                          27,
-                                                                      backgroundColor:
-                                                                          Color(
-                                                                              0xff1DB954),
-                                                                      child:
-                                                                          Icon(
-                                                                        Icons
-                                                                            .play_arrow,
-                                                                        color: Colors
-                                                                            .white,
-                                                                        size:
-                                                                            40,
-                                                                      ),
-                                                                    )),
-                                                                  ]),
-                                                              Container(
-                                                                alignment: Alignment
-                                                                    .centerRight,
-                                                                padding: EdgeInsets
-                                                                    .only(
+                                                playerr.play();
+                                              },
+                                              child: Card(
+                                                  elevation: 50,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                  ),
+                                                  color: Color(0xff141414),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Stack(
+                                                          alignment:
+                                                              AlignmentDirectional
+                                                                  .bottomCenter,
+                                                          children: [
+                                                            Stack(
+                                                                alignment:
+                                                                    AlignmentDirectional
+                                                                        .bottomStart,
+                                                                children: [
+                                                                  Stack(
+                                                                      alignment:
+                                                                          AlignmentDirectional
+                                                                              .center,
+                                                                      children: [
+                                                                        ClipRRect(
+                                                                            borderRadius:
+                                                                                BorderRadius.only(topLeft: Radius.circular(5), topRight: Radius.circular(5)),
+                                                                            child: FadeInImage.assetNetwork(image: videoResult[i].thumbnail.medium.url!, placeholder: 'assets/placeholder.png', height: 180, fit: BoxFit.fitHeight)),
+                                                                        Center(
+                                                                            child:
+                                                                                CircleAvatar(
+                                                                          radius:
+                                                                              27,
+                                                                          backgroundColor:
+                                                                              Color(0xff3e4da0),
+                                                                          child: _isAudioDownloading && downloadIndex == i
+                                                                              ? SizedBox(
+                                                                                  height: 20,
+                                                                                  width: 20,
+                                                                                  child: CircularProgressIndicator(
+                                                                                    color: Colors.white,
+                                                                                  ))
+                                                                              : Padding(
+                                                                                  padding: EdgeInsets.only(bottom: 4, left: 5),
+                                                                                  child: Icon(
+                                                                                    Ionicons.play_outline,
+                                                                                    color: Colors.white,
+                                                                                    size: 35,
+                                                                                  )),
+                                                                        )),
+                                                                      ]),
+                                                                  Container(
+                                                                    alignment:
+                                                                        Alignment
+                                                                            .centerRight,
+                                                                    padding: EdgeInsets.only(
                                                                         bottom:
                                                                             5,
                                                                         right:
                                                                             5),
-                                                                child: Text(
-                                                                  videoResult[i]
-                                                                      .duration
-                                                                      .toString(),
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .white),
-                                                                ),
-                                                              ),
-                                                            ]),
-                                                        Transform.translate(
-                                                            offset:
-                                                                Offset(0, 8),
-                                                            child: Divider(
-                                                              color: Color(
-                                                                  0xff1DB954),
-                                                              thickness: 3,
-                                                            ))
-                                                      ]),
-                                                  Flex(
-                                                      direction:
-                                                          Axis.horizontal,
-                                                      children: [
-                                                        Expanded(
-                                                            child: Padding(
-                                                                padding:
-                                                                    EdgeInsets
+                                                                    child: Text(
+                                                                      videoResult[
+                                                                              i]
+                                                                          .duration
+                                                                          .toString(),
+                                                                      style: TextStyle(
+                                                                          color:
+                                                                              Colors.white),
+                                                                    ),
+                                                                  ),
+                                                                ]),
+                                                            Transform.translate(
+                                                                offset: Offset(
+                                                                    0, 8),
+                                                                child: Divider(
+                                                                  color: Color(
+                                                                      0xff3e4da0),
+                                                                  thickness: 3,
+                                                                ))
+                                                          ]),
+                                                      Flex(
+                                                          direction:
+                                                              Axis.horizontal,
+                                                          children: [
+                                                            Expanded(
+                                                                child: Padding(
+                                                                    padding: EdgeInsets
                                                                         .fromLTRB(
                                                                             20,
                                                                             15,
                                                                             20,
                                                                             2),
-                                                                child: RichText(
-                                                                  maxLines: 2,
-                                                                  text: TextSpan(
-                                                                      locale: Locale(
-                                                                          'en'),
-                                                                      text: removeUnicodeApostrophes(
-                                                                          videoResult[i]
+                                                                    child:
+                                                                        RichText(
+                                                                      maxLines:
+                                                                          2,
+                                                                      text: TextSpan(
+                                                                          locale: Locale(
+                                                                              'en'),
+                                                                          text: removeUnicodeApostrophes(videoResult[i]
                                                                               .title),
-                                                                      style: TextStyle(
-                                                                          color: Colors
-                                                                              .white,
-                                                                          height:
-                                                                              1.5)),
-                                                                )))
-                                                      ])
-                                                ],
-                                              ))))
+                                                                          style: TextStyle(
+                                                                              color: Colors.white,
+                                                                              height: 1.5)),
+                                                                    )))
+                                                          ])
+                                                    ],
+                                                  )))))
                                 ]
                               ] else ...[
                                 Center(
@@ -683,12 +797,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                   blurSize: 0.25,
                                   blurBackgroundColor: Colors.black54,
                                   menuOffset: -20,
-                                  borderColor: Color(0xff252525),
+                                  borderColor: Color(0xff141414),
                                   openWithTap: false,
                                   onPressed: () {},
                                   menuItems: <FocusedMenuItem>[
                                     FocusedMenuItem(
-                                        backgroundColor: Color(0xff252525),
+                                        backgroundColor: Color(0xff141414),
                                         title: Text(
                                           "Delete",
                                           style: TextStyle(
@@ -699,16 +813,21 @@ class _MyHomePageState extends State<MyHomePage> {
                                           color: Colors.redAccent,
                                         ),
                                         onPressed: () {
-                                          bool pl = i.path.split('/').last ==
-                                              playerr.sequenceState!
-                                                  .currentSource!.tag.title;
-                                          Playlist!.removeAt(files.indexOf(i));
+                                          bool pl = false;
+                                          if (playerr.sequenceState != null) {
+                                            pl = i.path.split('/').last ==
+                                                playerr.sequenceState!
+                                                    .currentSource!.tag.title;
+                                            if (pl) {
+                                              playerr.stop();
+                                              dplay = false;
+                                            }
+                                            Playlist!
+                                                .removeAt(files.indexOf(i));
+                                          }
                                           File(i.path).delete();
                                           files = dir!.listSync();
-                                          if (pl) {
-                                            playerr.stop();
-                                            dplay = false;
-                                          }
+
                                           setState(() {});
                                         }),
                                   ],
@@ -741,8 +860,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                                           .tag
                                                           .title ==
                                                       i.path.split('/').last
-                                              ? Color(0xff1DB954)
-                                              : Color(0xff252525),
+                                              ? Color(0xff3e4da0)
+                                              : Color(0xff141414),
                                           child: Padding(
                                               padding: EdgeInsets.all(20),
                                               child: Wrap(
@@ -752,20 +871,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   children: [
                                                     CircleAvatar(
                                                         radius: 25,
-                                                        backgroundColor: dplay &&
-                                                                playerr
-                                                                        .sequenceState!
-                                                                        .currentSource!
-                                                                        .tag
-                                                                        .title ==
-                                                                    i.path
-                                                                        .split(
-                                                                            '/')
-                                                                        .last
-                                                            ? Color(0xff252525)
-                                                            : Color(0xff1DB954),
+                                                        backgroundColor:
+                                                            Colors.transparent,
                                                         child: Icon(
-                                                          Icons.music_note,
+                                                          Ionicons
+                                                              .musical_notes_outline,
                                                           color: Colors.white,
                                                           size: 40,
                                                         )),
@@ -817,11 +927,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   String removeUnicodeApostrophes(String strInput) {
-    // First remove the single slash.
     String strModified = strInput.replaceAll('&#39;', "\'");
     strModified = strModified.replaceAll('&quot;', "");
-
-    // Now, we can replace the rest of the unicode with a proper apostrophe.
     return strModified;
   }
 
@@ -857,13 +964,12 @@ class _MyHomePageState extends State<MyHomePage> {
               stops: height == 80 ? [0.0, 1] : [0.0, 0.5, 1],
               colors: height == 80
                   ? [
-                      Color(0xff252525),
-                      // Color(0xff1DB954),
-                      Colors.blueGrey,
+                      Colors.black,
+                      Color(0xff3e4da0),
                     ]
                   : [
-                      Color(0xff252525),
-                      Color(0xff1DB954),
+                      Colors.black,
+                      Color(0xff3e4da0),
                       Colors.blueGrey,
                     ],
             )),
@@ -899,7 +1005,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         playing = !playing;
                                       });
                                     },
-                                    icon: Icon(Icons.pause),
+                                    icon: Icon(Ionicons.pause_outline),
                                     color: Colors.white,
                                     iconSize: 30,
                                   )
@@ -910,7 +1016,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         playing = !playing;
                                       });
                                     },
-                                    icon: Icon(Icons.play_arrow),
+                                    icon: Icon(Ionicons.play_outline),
                                     color: Colors.white,
                                     iconSize: 30,
                                   )
@@ -919,329 +1025,336 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                       ],
                     ))
-                : Stack(alignment: AlignmentDirectional.topCenter, children: [
-                    Stack(
-                        alignment: AlignmentDirectional.bottomCenter,
-                        children: [
-                          Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                : Container(
+                    height: MediaQuery.of(context).size.height,
+                    width: MediaQuery.of(context).size.width,
+                    alignment: Alignment.topCenter,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      // mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Padding(
+                            padding: EdgeInsets.only(right: 5, left: 5),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Padding(
-                                    padding: EdgeInsets.only(
-                                        top: 120, right: 20, left: 20),
-                                    child: Image.network(
-                                      playingNow!.thumbnail.high.url!,
-                                      fit: BoxFit.fitWidth,
-                                    )),
-                                Transform.translate(
-                                    offset: Offset(0, 40),
-                                    child: SizedBox(
-                                        width: 340,
-                                        child: RichText(
-                                          text: TextSpan(
-                                              locale: Locale('en'),
-                                              text: removeUnicodeApostrophes(
-                                                  playingNow!.title),
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  height: 1.5,
-                                                  fontSize: 16)),
-                                        ))),
-                              ]),
-                          Container(
-                              height: 240,
-                              child: Column(children: [
-                                StreamBuilder<DurationState>(
-                                  stream: _durationState,
-                                  builder: (context, snapshot) {
-                                    final durationState = snapshot.data;
-                                    final progress = durationState?.progress ??
-                                        Duration.zero;
-                                    final buffered = durationState?.buffered ??
-                                        Duration.zero;
-                                    final total = durationState?.total ??
-                                        playerr.duration ??
-                                        Duration.zero;
-
-                                    return Padding(
-                                        padding: EdgeInsets.only(
-                                            left: 20, right: 20, bottom: 25),
-                                        child: ProgressBar(
-                                          timeLabelPadding: 5,
-                                          timeLabelTextStyle:
-                                              TextStyle(color: Colors.white),
-                                          progress: progress,
-                                          buffered: buffered,
-                                          total: total,
-                                          progressBarColor: Color(0xff252525),
-                                          baseBarColor:
-                                              Colors.white.withOpacity(0.24),
-                                          bufferedBarColor:
-                                              Colors.white.withOpacity(0.24),
-                                          thumbColor: Colors.white,
-                                          barHeight: 5.0,
-                                          thumbRadius: 7,
-                                          onSeek: (duration) {
-                                            playerr.seek(duration);
-                                          },
-                                        ));
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      height = 80;
+                                    });
                                   },
+                                  icon: Icon(Ionicons.chevron_down_outline),
+                                  color: Colors.white,
+                                  iconSize: 30,
                                 ),
-                                StreamBuilder<DurationState>(
-                                    stream: _durationState,
-                                    builder: (context, snapshot) {
-                                      final durationState = snapshot.data;
-                                      final progress =
-                                          durationState?.progress ??
-                                              Duration.zero;
-                                      final buffered =
-                                          durationState?.buffered ??
-                                              Duration.zero;
-                                      final total = durationState?.total ??
-                                          playerr.duration ??
-                                          Duration.zero;
-
-                                      return Wrap(
-                                          crossAxisAlignment:
-                                              WrapCrossAlignment.center,
-                                          spacing: !_isAudioLoading ? 30 : 45,
-                                          children: [
-                                            if (current - 1 >= 0) ...[
-                                              IconButton(
-                                                onPressed: () async {
-                                                  if (progress <
-                                                      Duration(seconds: 5)) {
-                                                    setState(() {
-                                                      current--;
-                                                      playingNow =
-                                                          nowVideo[current];
-                                                    });
-                                                    setState(() {
-                                                      _isAudioLoading = true;
-                                                      current = current;
-                                                      playerr.stop();
-                                                    });
-                                                    var manifest = await yt
-                                                        .videos.streamsClient
-                                                        .getManifest(
-                                                            playingNow!.url);
-                                                    var streamInfo = manifest
-                                                        .audioOnly
-                                                        .withHighestBitrate();
-                                                    stream = streamInfo;
-                                                    setState(() {
-                                                      _isAudioLoading = false;
-                                                      playing = true;
-                                                      _isAudioDownloading =
-                                                          false;
-                                                    });
-                                                    playerr.setAudioSource(
-                                                        ConcatenatingAudioSource(
-                                                            children: [
-                                                          AudioSource.uri(
-                                                              streamInfo.url,
-                                                              tag: MediaItem(
-                                                                  id: playingNow!
-                                                                      .id!,
-                                                                  title: removeUnicodeApostrophes(
-                                                                      videoResult[
-                                                                              current]
-                                                                          .title),
-                                                                  artist: removeUnicodeApostrophes(
-                                                                      videoResult[
-                                                                              current]
-                                                                          .channelTitle),
-                                                                  artUri: Uri.parse(
-                                                                      playingNow!
-                                                                          .thumbnail
-                                                                          .medium
-                                                                          .url!)))
-                                                        ]));
-
-                                                    setState(() {
-                                                      play = true;
-                                                    });
-                                                    playerr.play();
-                                                  } else {
-                                                    playerr.seek(Duration.zero);
-                                                  }
-                                                },
-                                                icon: Icon(Icons.skip_previous),
-                                                color: Colors.white,
-                                                iconSize: 50,
-                                              )
-                                            ] else ...[
-                                              SizedBox(
-                                                width: 66,
-                                              )
-                                            ],
-                                            !_isAudioLoading
-                                                ? playing
-                                                    ? IconButton(
-                                                        onPressed: () {
-                                                          setState(() {
-                                                            playerr.pause();
-                                                            playing = !playing;
-                                                          });
-                                                        },
-                                                        icon: Icon(Icons.pause),
-                                                        color: Colors.white,
-                                                        iconSize: 50,
-                                                      )
-                                                    : IconButton(
-                                                        onPressed: () {
-                                                          setState(() {
-                                                            playerr.play();
-                                                            playing = !playing;
-                                                          });
-                                                        },
-                                                        icon: Icon(
-                                                            Icons.play_arrow),
-                                                        color: Colors.white,
-                                                        iconSize: 50,
-                                                      )
-                                                : CircularProgressIndicator(
-                                                    strokeWidth: 5,
-                                                    color: Colors.white,
-                                                  ),
-                                            if (current + 1 <
-                                                nowVideo.length) ...[
-                                              IconButton(
-                                                onPressed: () async {
-                                                  setState(() {
-                                                    current++;
-                                                    playingNow =
-                                                        nowVideo[current];
-                                                  });
-                                                  setState(() {
-                                                    _isAudioLoading = true;
-                                                    current = current;
-                                                    playerr.stop();
-                                                  });
-                                                  var manifest = await yt
-                                                      .videos.streamsClient
-                                                      .getManifest(
-                                                          playingNow!.url);
-                                                  var streamInfo = manifest
-                                                      .audioOnly
-                                                      .withHighestBitrate();
-                                                  stream = streamInfo;
-
-                                                  setState(() {
-                                                    _isAudioLoading = false;
-                                                    _isAudioDownloading = false;
-                                                    playing = true;
-                                                  });
-                                                  playerr.setAudioSource(
-                                                      ConcatenatingAudioSource(
-                                                          children: [
-                                                        AudioSource.uri(
-                                                            streamInfo.url,
-                                                            tag: MediaItem(
-                                                                id: playingNow!
-                                                                    .id!,
-                                                                title: removeUnicodeApostrophes(
-                                                                    videoResult[
-                                                                            current]
-                                                                        .title),
-                                                                artist: removeUnicodeApostrophes(
-                                                                    videoResult[
-                                                                            current]
-                                                                        .channelTitle),
-                                                                artUri: Uri.parse(
-                                                                    playingNow!
-                                                                        .thumbnail
-                                                                        .medium
-                                                                        .url!)))
-                                                      ]));
-
-                                                  setState(() {
-                                                    play = true;
-                                                  });
-                                                  playerr.play();
-                                                },
-                                                icon: Icon(Icons.skip_next),
-                                                color: Colors.white,
-                                                iconSize: 50,
-                                              )
-                                            ] else ...[
-                                              SizedBox(
-                                                width: 66,
-                                              )
-                                            ],
-                                          ]);
-                                    })
-                              ])),
-                        ]),
-                    Padding(
-                        padding: EdgeInsets.only(right: 5, left: 5),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  height = 80;
-                                });
-                              },
-                              icon: Icon(Icons.keyboard_arrow_down),
-                              color: Colors.white,
-                              iconSize: 40,
-                            ),
-                            Spacer(),
-                            !_isAudioDownloading
-                                ? IconButton(
-                                    onPressed: () async {
-                                      setState(() {
-                                        _isAudioDownloading = true;
-                                      });
-                                      var streams =
-                                          yt.videos.streamsClient.get(stream!);
-                                      var filee = File(
-                                          'storage/emulated/0/Download/Tubify/' +
+                                !_isAudioDownloading
+                                    ? IconButton(
+                                        onPressed: () async {
+                                          setState(() {
+                                            _isAudioDownloading = true;
+                                            downloadIndex = current;
+                                          });
+                                          await _createFolder();
+                                          await download(
+                                              stream!.url.toString(),
                                               removeUnicodeApostrophes(
-                                                  playingNow!.title) +
-                                              ".mp3");
-                                      filee.create();
-                                      var fileStream = filee.openWrite();
-                                      await streams.pipe(fileStream);
-                                      await fileStream.flush();
-                                      await fileStream.close();
-                                      files = dir!.listSync();
-                                      Playlist!.add(AudioSource.uri(
-                                          Uri.parse(
-                                              'storage/emulated/0/Download/Tubify/' +
-                                                  removeUnicodeApostrophes(
-                                                      playingNow!.title) +
-                                                  ".mp3"),
-                                          tag: MediaItem(
-                                              id: 'storage/emulated/0/Download/Tubify/' +
-                                                  removeUnicodeApostrophes(
-                                                      playingNow!.title) +
-                                                  ".mp3",
-                                              title: removeUnicodeApostrophes(
-                                                      playingNow!.title) +
-                                                  ".mp3")));
-                                      setState(() {
-                                        _isAudioDownloading = false;
-                                      });
-                                    },
-                                    icon: Icon(Icons.download),
-                                    color: Colors.white,
-                                    iconSize: 30,
-                                  )
-                                : Padding(
-                                    padding: EdgeInsets.only(right: 11),
-                                    child: SizedBox(
-                                        height: 25,
-                                        width: 25,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                        ))),
-                          ],
-                        ))
-                  ])));
+                                                      videoResult[current]
+                                                          .title) +
+                                                  ".mp3");
+                                          showDialog(
+                                              context: context,
+                                              builder: (context) {
+                                                Future.delayed(
+                                                    Duration(
+                                                        milliseconds: 1500),
+                                                    () {
+                                                  Navigator.of(context)
+                                                      .pop(true);
+                                                });
+                                                return AlertDialog(
+                                                  backgroundColor:
+                                                      Color(0xff141414),
+                                                  title: Text(
+                                                    'audio is started to download..',
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 12),
+                                                  ),
+                                                );
+                                              });
+                                          setState(() {
+                                            _isAudioDownloading = false;
+                                          });
+                                        },
+                                        icon: Icon(
+                                            Ionicons.cloud_download_outline),
+                                        color: Colors.white,
+                                        iconSize: 30,
+                                      )
+                                    : Padding(
+                                        padding: EdgeInsets.only(right: 11),
+                                        child: SizedBox(
+                                            height: 25,
+                                            width: 25,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                            ))),
+                              ],
+                            )),
+                        Padding(
+                            padding: EdgeInsets.only(
+                                top: MediaQuery.of(context).size.height / 20,
+                                right: 20,
+                                left: 20),
+                            child: Image.network(
+                              playingNow!.thumbnail.high.url!,
+                              fit: BoxFit.fitWidth,
+                            )),
+                        Container(
+                            padding: EdgeInsets.only(
+                                top: MediaQuery.of(context).size.height / 20,
+                                right: 20,
+                                left: 20),
+                            width: 340,
+                            child: RichText(
+                              text: TextSpan(
+                                  locale: Locale('en'),
+                                  text: removeUnicodeApostrophes(
+                                      playingNow!.title),
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      height: 1.5,
+                                      fontSize: 16)),
+                            )),
+                        StreamBuilder<DurationState>(
+                          stream: _durationState,
+                          builder: (context, snapshot) {
+                            final durationState = snapshot.data;
+                            final progress =
+                                durationState?.progress ?? Duration.zero;
+                            final buffered =
+                                durationState?.buffered ?? Duration.zero;
+                            final total = durationState?.total ??
+                                playerr.duration ??
+                                Duration.zero;
+
+                            return Padding(
+                                padding: EdgeInsets.only(
+                                    top:
+                                        MediaQuery.of(context).size.height / 20,
+                                    left: 20,
+                                    right: 20),
+                                child: ProgressBar(
+                                  timeLabelPadding: 5,
+                                  timeLabelTextStyle:
+                                      TextStyle(color: Colors.white),
+                                  progress: progress,
+                                  buffered: buffered,
+                                  total: total,
+                                  progressBarColor: Color(0xff141414),
+                                  baseBarColor: Colors.white.withOpacity(0.24),
+                                  bufferedBarColor:
+                                      Colors.white.withOpacity(0.24),
+                                  thumbColor: Colors.white,
+                                  barHeight: 5.0,
+                                  thumbRadius: 7,
+                                  onSeek: (duration) {
+                                    playerr.seek(duration);
+                                  },
+                                ));
+                          },
+                        ),
+                        StreamBuilder<DurationState>(
+                            stream: _durationState,
+                            builder: (context, snapshot) {
+                              final durationState = snapshot.data;
+                              final progress =
+                                  durationState?.progress ?? Duration.zero;
+                              final buffered =
+                                  durationState?.buffered ?? Duration.zero;
+                              final total = durationState?.total ??
+                                  playerr.duration ??
+                                  Duration.zero;
+
+                              return Padding(
+                                  padding: EdgeInsets.only(
+                                      top: MediaQuery.of(context).size.height /
+                                          20,
+                                      left: 40,
+                                      right: 40),
+                                  child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      // spacing: !_isAudioLoading ? 30 : 45,
+                                      children: [
+                                        if (current - 1 >= 0) ...[
+                                          IconButton(
+                                            onPressed: () async {
+                                              if (progress <
+                                                  Duration(seconds: 5)) {
+                                                setState(() {
+                                                  current--;
+                                                  playingNow =
+                                                      nowVideo[current];
+                                                });
+                                                setState(() {
+                                                  _isAudioLoading = true;
+                                                  current = current;
+                                                  playerr.stop();
+                                                });
+                                                var manifest = await yt
+                                                    .videos.streamsClient
+                                                    .getManifest(
+                                                        playingNow!.url);
+                                                var streamInfo = manifest
+                                                    .audioOnly
+                                                    .withHighestBitrate();
+                                                stream = streamInfo;
+                                                setState(() {
+                                                  _isAudioLoading = false;
+                                                  playing = true;
+                                                  _isAudioDownloading = false;
+                                                });
+                                                playerr.setAudioSource(
+                                                    ConcatenatingAudioSource(
+                                                        children: [
+                                                      AudioSource.uri(
+                                                          streamInfo.url,
+                                                          tag: MediaItem(
+                                                              id: playingNow!
+                                                                  .id!,
+                                                              title: removeUnicodeApostrophes(
+                                                                  videoResult[
+                                                                          current]
+                                                                      .title),
+                                                              artist: removeUnicodeApostrophes(
+                                                                  videoResult[
+                                                                          current]
+                                                                      .channelTitle),
+                                                              artUri: Uri.parse(
+                                                                  playingNow!
+                                                                      .thumbnail
+                                                                      .medium
+                                                                      .url!)))
+                                                    ]));
+
+                                                setState(() {
+                                                  play = true;
+                                                });
+                                                playerr.play();
+                                              } else {
+                                                playerr.seek(Duration.zero);
+                                              }
+                                            },
+                                            icon: Icon(Ionicons
+                                                .play_skip_back_outline),
+                                            color: Colors.white,
+                                            iconSize: 50,
+                                          )
+                                        ] else ...[
+                                          SizedBox(
+                                            width: 66,
+                                          )
+                                        ],
+                                        !_isAudioLoading
+                                            ? playing
+                                                ? IconButton(
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        playerr.pause();
+                                                        playing = !playing;
+                                                      });
+                                                    },
+                                                    icon: Icon(
+                                                        Ionicons.pause_outline),
+                                                    color: Colors.white,
+                                                    iconSize: 50,
+                                                  )
+                                                : IconButton(
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        playerr.play();
+                                                        playing = !playing;
+                                                      });
+                                                    },
+                                                    icon: Icon(
+                                                        Ionicons.play_outline),
+                                                    color: Colors.white,
+                                                    iconSize: 50,
+                                                  )
+                                            : CircularProgressIndicator(
+                                                strokeWidth: 5,
+                                                color: Colors.white,
+                                              ),
+                                        if (current + 1 < nowVideo.length) ...[
+                                          IconButton(
+                                            onPressed: () async {
+                                              setState(() {
+                                                current++;
+                                                playingNow = nowVideo[current];
+                                              });
+                                              setState(() {
+                                                _isAudioLoading = true;
+                                                current = current;
+                                                playerr.stop();
+                                              });
+                                              var manifest = await yt
+                                                  .videos.streamsClient
+                                                  .getManifest(playingNow!.url);
+                                              var streamInfo = manifest
+                                                  .audioOnly
+                                                  .withHighestBitrate();
+                                              stream = streamInfo;
+
+                                              setState(() {
+                                                _isAudioLoading = false;
+                                                _isAudioDownloading = false;
+                                                playing = true;
+                                              });
+                                              playerr.setAudioSource(
+                                                  ConcatenatingAudioSource(
+                                                      children: [
+                                                    AudioSource.uri(
+                                                        streamInfo.url,
+                                                        tag: MediaItem(
+                                                            id: playingNow!.id!,
+                                                            title: removeUnicodeApostrophes(
+                                                                videoResult[
+                                                                        current]
+                                                                    .title),
+                                                            artist: removeUnicodeApostrophes(
+                                                                videoResult[
+                                                                        current]
+                                                                    .channelTitle),
+                                                            artUri: Uri.parse(
+                                                                playingNow!
+                                                                    .thumbnail
+                                                                    .medium
+                                                                    .url!)))
+                                                  ]));
+
+                                              setState(() {
+                                                play = true;
+                                              });
+                                              playerr.play();
+                                            },
+                                            icon: Icon(Ionicons
+                                                .play_skip_forward_outline),
+                                            color: Colors.white,
+                                            iconSize: 50,
+                                          )
+                                        ] else ...[
+                                          SizedBox(
+                                            width: 66,
+                                          )
+                                        ],
+                                      ]));
+                            })
+                      ],
+                    ))));
   }
 
   Widget player2() {
@@ -1270,13 +1383,13 @@ class _MyHomePageState extends State<MyHomePage> {
               stops: height == 80 ? [0.0, 1] : [0.0, 0.5, 1],
               colors: height == 80
                   ? [
-                      Color(0xff252525),
+                      Colors.black,
                       // Color(0xff1DB954),
-                      Colors.blueGrey,
+                      Color(0xff3e4da0),
                     ]
                   : [
-                      Color(0xff252525),
-                      Color(0xff1DB954),
+                      Colors.black,
+                      Color(0xff3e4da0),
                       Colors.blueGrey,
                     ],
             )),
@@ -1288,10 +1401,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         CircleAvatar(
-                            backgroundColor: Colors.black,
+                            backgroundColor: Colors.transparent,
                             radius: 25,
                             child: Icon(
-                              Icons.music_note,
+                              Ionicons.musical_notes_outline,
                               size: 30,
                               color: Colors.white,
                             )),
@@ -1309,208 +1422,213 @@ class _MyHomePageState extends State<MyHomePage> {
                                       fontSize: 11)),
                             )),
                         Spacer(),
-                        !_isAudioLoading
-                            ? playing
-                                ? IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        playerr.pause();
-                                        playing = !playing;
-                                      });
-                                    },
-                                    icon: Icon(Icons.pause),
-                                    color: Colors.white,
-                                    iconSize: 30,
-                                  )
-                                : IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        playerr.play();
-                                        playing = !playing;
-                                      });
-                                    },
-                                    icon: Icon(Icons.play_arrow),
-                                    color: Colors.white,
-                                    iconSize: 30,
-                                  )
-                            : CircularProgressIndicator(
+                        playing
+                            ? IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    playerr.pause();
+                                    playing = !playing;
+                                  });
+                                },
+                                icon: Icon(Ionicons.pause_outline),
                                 color: Colors.white,
-                              ),
+                                iconSize: 30,
+                              )
+                            : IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    playerr.play();
+                                    playing = !playing;
+                                  });
+                                },
+                                icon: Icon(Ionicons.play_outline),
+                                color: Colors.white,
+                                iconSize: 30,
+                              )
                       ],
                     ))
-                : Stack(alignment: AlignmentDirectional.topCenter, children: [
-                    Stack(
-                        alignment: AlignmentDirectional.bottomCenter,
+                : Container(
+                    height: MediaQuery.of(context).size.height,
+                    width: MediaQuery.of(context).size.width,
+                    alignment: Alignment.topCenter,
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Container(
-                                    height: MediaQuery.of(context).size.height *
-                                        (1.3 / 3),
+                          Padding(
+                              padding: EdgeInsets.only(right: 5, left: 5),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        height = 80;
+                                      });
+                                    },
+                                    icon: Icon(Ionicons.chevron_down_outline),
+                                    color: Colors.white,
+                                    iconSize: 30,
+                                  ),
+                                ],
+                              )),
+                          Padding(
+                              padding: EdgeInsets.only(
+                                  top: MediaQuery.of(context).size.height / 20,
+                                  left: 20,
+                                  right: 20),
+                              child: CircleAvatar(
+                                  radius: 120,
+                                  backgroundColor: Colors.transparent,
+                                  child: Icon(
+                                    Ionicons.musical_notes_outline,
+                                    color: Colors.white,
+                                    size: 120,
+                                  ))),
+                          Padding(
+                              padding: EdgeInsets.only(
+                                  top: MediaQuery.of(context).size.height / 20,
+                                  left: 20,
+                                  right: 20),
+                              child: SizedBox(
+                                  width: 340,
+                                  child: RichText(
+                                    text: TextSpan(
+                                        locale: Locale('en'),
+                                        text: title,
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            height: 1.5,
+                                            fontSize: 16)),
+                                  ))),
+                          StreamBuilder<DurationState>(
+                            stream: _durationState,
+                            builder: (context, snapshot) {
+                              final durationState = snapshot.data;
+                              final progress =
+                                  durationState?.progress ?? Duration.zero;
+                              final buffered = Duration.zero;
+                              final total = durationState?.total ??
+                                  playerr.duration ??
+                                  Duration.zero;
+
+                              return Padding(
+                                  padding: EdgeInsets.only(
+                                      top: MediaQuery.of(context).size.height /
+                                          20,
+                                      left: 20,
+                                      right: 20),
+                                  child: ProgressBar(
+                                    timeLabelPadding: 5,
+                                    timeLabelTextStyle:
+                                        TextStyle(color: Colors.white),
+                                    progress: progress,
+                                    buffered: buffered,
+                                    total: total,
+                                    progressBarColor: Color(0xff141414),
+                                    baseBarColor:
+                                        Colors.white.withOpacity(0.24),
+                                    bufferedBarColor:
+                                        Colors.white.withOpacity(0.24),
+                                    thumbColor: Colors.white,
+                                    barHeight: 5.0,
+                                    thumbRadius: 7,
+                                    onSeek: (duration) {
+                                      playerr.seek(duration);
+                                    },
+                                  ));
+                            },
+                          ),
+                          StreamBuilder<DurationState>(
+                              stream: _durationState,
+                              builder: (context, snapshot) {
+                                final durationState = snapshot.data;
+                                final progress =
+                                    durationState?.progress ?? Duration.zero;
+                                final buffered = Duration.zero;
+                                final total = durationState?.total ??
+                                    playerr.duration ??
+                                    Duration.zero;
+
+                                return Padding(
                                     padding: EdgeInsets.only(
-                                        top: 120, right: 20, left: 20),
-                                    child: CircleAvatar(
-                                        radius: 120,
-                                        backgroundColor: Color(0xff252525),
-                                        child: Icon(
-                                          Icons.music_note,
-                                          color: Colors.white,
-                                          size: 120,
-                                        ))),
-                                Transform.translate(
-                                    offset: Offset(0, 40),
-                                    child: SizedBox(
-                                        width: 340,
-                                        child: RichText(
-                                          text: TextSpan(
-                                              locale: Locale('en'),
-                                              text: title,
-                                              style: TextStyle(
+                                        top:
+                                            MediaQuery.of(context).size.height /
+                                                20,
+                                        right: 40,
+                                        left: 40),
+                                    child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          if (playerr.hasPrevious) ...[
+                                            IconButton(
+                                              onPressed: () {
+                                                if (progress <
+                                                    Duration(seconds: 5)) {
+                                                  playerr.seekToPrevious();
+                                                } else {
+                                                  playerr.seek(Duration.zero);
+                                                }
+                                              },
+                                              icon: Icon(Ionicons
+                                                  .play_skip_back_outline),
+                                              color: Colors.white,
+                                              iconSize: 50,
+                                            ),
+                                          ] else ...[
+                                            SizedBox(
+                                              width: 66,
+                                            )
+                                          ],
+                                          playing
+                                              ? IconButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      playerr.pause();
+                                                      playing = !playing;
+                                                    });
+                                                  },
+                                                  icon: Icon(
+                                                      Ionicons.pause_outline),
                                                   color: Colors.white,
-                                                  height: 1.5,
-                                                  fontSize: 16)),
-                                        ))),
-                              ]),
-                          Container(
-                              height: 240,
-                              child: Column(children: [
-                                StreamBuilder<DurationState>(
-                                  stream: _durationState,
-                                  builder: (context, snapshot) {
-                                    final durationState = snapshot.data;
-                                    final progress = durationState?.progress ??
-                                        Duration.zero;
-                                    final buffered = Duration.zero;
-                                    final total = durationState?.total ??
-                                        playerr.duration ??
-                                        Duration.zero;
-
-                                    return Padding(
-                                        padding: EdgeInsets.only(
-                                            left: 20, right: 20, bottom: 25),
-                                        child: ProgressBar(
-                                          timeLabelPadding: 5,
-                                          timeLabelTextStyle:
-                                              TextStyle(color: Colors.white),
-                                          progress: progress,
-                                          buffered: buffered,
-                                          total: total,
-                                          progressBarColor: Color(0xff252525),
-                                          baseBarColor:
-                                              Colors.white.withOpacity(0.24),
-                                          bufferedBarColor:
-                                              Colors.white.withOpacity(0.24),
-                                          thumbColor: Colors.white,
-                                          barHeight: 5.0,
-                                          thumbRadius: 7,
-                                          onSeek: (duration) {
-                                            playerr.seek(duration);
-                                          },
-                                        ));
-                                  },
-                                ),
-                                StreamBuilder<DurationState>(
-                                    stream: _durationState,
-                                    builder: (context, snapshot) {
-                                      final durationState = snapshot.data;
-                                      final progress =
-                                          durationState?.progress ??
-                                              Duration.zero;
-                                      final buffered = Duration.zero;
-                                      final total = durationState?.total ??
-                                          playerr.duration ??
-                                          Duration.zero;
-
-                                      return Wrap(
-                                          crossAxisAlignment:
-                                              WrapCrossAlignment.center,
-                                          spacing: 30,
-                                          children: [
-                                            if (playerr.hasPrevious) ...[
-                                              IconButton(
-                                                onPressed: () {
-                                                  if (progress <
-                                                      Duration(seconds: 5)) {
-                                                    playerr.seekToPrevious();
-                                                  } else {
-                                                    playerr.seek(Duration.zero);
-                                                  }
-                                                },
-                                                icon: Icon(Icons.skip_previous),
-                                                color: Colors.white,
-                                                iconSize: 50,
-                                              ),
-                                            ] else ...[
-                                              SizedBox(
-                                                width: 66,
-                                              )
-                                            ],
-                                            playing
-                                                ? IconButton(
-                                                    onPressed: () {
-                                                      setState(() {
-                                                        playerr.pause();
-                                                        playing = !playing;
-                                                      });
-                                                    },
-                                                    icon: Icon(Icons.pause),
-                                                    color: Colors.white,
-                                                    iconSize: 50,
-                                                  )
-                                                : IconButton(
-                                                    onPressed: () {
-                                                      setState(() {
-                                                        playerr.play();
-                                                        playing = !playing;
-                                                      });
-                                                    },
-                                                    icon:
-                                                        Icon(Icons.play_arrow),
-                                                    color: Colors.white,
-                                                    iconSize: 50,
-                                                  ),
-                                            if (playerr.hasNext) ...[
-                                              IconButton(
-                                                onPressed: () async {
-                                                  playerr.seekToNext();
-                                                },
-                                                icon: Icon(Icons.skip_next),
-                                                color: Colors.white,
-                                                iconSize: 50,
-                                              )
-                                            ] else ...[
-                                              SizedBox(
-                                                width: 66,
-                                              )
-                                            ],
-                                          ]);
-                                    })
-                              ])),
-                        ]),
-                    Padding(
-                        padding: EdgeInsets.only(right: 5, left: 5),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  height = 80;
-                                });
-                              },
-                              icon: Icon(Icons.keyboard_arrow_down),
-                              color: Colors.white,
-                              iconSize: 40,
-                            ),
-                          ],
-                        ))
-                  ])));
+                                                  iconSize: 50,
+                                                )
+                                              : IconButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      playerr.play();
+                                                      playing = !playing;
+                                                    });
+                                                  },
+                                                  icon: Icon(
+                                                      Ionicons.play_outline),
+                                                  color: Colors.white,
+                                                  iconSize: 50,
+                                                ),
+                                          if (playerr.hasNext) ...[
+                                            IconButton(
+                                              onPressed: () async {
+                                                playerr.seekToNext();
+                                              },
+                                              icon: Icon(Ionicons
+                                                  .play_skip_forward_outline),
+                                              color: Colors.white,
+                                              iconSize: 50,
+                                            )
+                                          ] else ...[
+                                            SizedBox(
+                                              width: 66,
+                                            )
+                                          ],
+                                        ]));
+                              })
+                        ]))));
   }
 
   getFiles() async {
-    dir = Directory('storage/emulated/0/Download/Tubify');
     files = dir!.listSync();
     Playlist = ConcatenatingAudioSource(children: []);
     files.forEach((element) {
@@ -1577,7 +1695,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _createFolder() async {
-    final path = Directory('storage/emulated/0/Download/Tubify');
+    final path = await DownloadsPath.downloadsDirectory();
+    dir = Directory('${path!.path}/Tubify');
     var status = await Permission.manageExternalStorage.status;
     if (!status.isGranted) {
       showDialog(
@@ -1585,7 +1704,7 @@ class _MyHomePageState extends State<MyHomePage> {
         context: context,
         builder: (context) => AlertDialog(
           actionsAlignment: MainAxisAlignment.spaceBetween,
-          backgroundColor: Color(0xff252525),
+          backgroundColor: Color(0xff141414),
           title: const Text(
             "Allow \"Tubify\" to access your files while using the app",
             textAlign: TextAlign.center,
@@ -1608,6 +1727,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () async {
                   Navigator.pop(context);
                   await Permission.manageExternalStorage.request();
+                  _notify();
                   getFiles();
                   setState(() {});
                 }),
@@ -1615,16 +1735,61 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     } else {
+      _notify();
       getFiles();
       setState(() {});
     }
 
-    if ((await path.exists())) {
-      return path.path;
+    if ((await dir!.exists())) {
+      return dir!.path;
     } else {
-      path.create();
-      return path.path;
+      dir!.create();
+      return dir!.path;
     }
+  }
+
+  Future<bool> _notify() async {
+    bool show = false;
+    var status = await Permission.notification.status;
+    if (!status.isGranted) {
+      showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (context) => AlertDialog(
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          backgroundColor: Color(0xff141414),
+          title: const Text(
+            "Allow \"Tubify\" to send you Notifactions",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white),
+          ),
+          titleTextStyle: TextStyle(fontFamily: 'Gotham', fontSize: 18),
+          content: const Text(
+            "the app will access your notifications to be able to download audios.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          actions: [
+            TextButton(
+                child: const Text("Deny Access"),
+                onPressed: () async {
+                  Navigator.pop(context);
+                }),
+            TextButton(
+                child: const Text("Allow Access"),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await Permission.notification.request();
+                  show = true;
+                  setState(() {});
+                }),
+          ],
+        ),
+      );
+    } else {
+      show = true;
+    }
+    return show;
   }
 }
 
