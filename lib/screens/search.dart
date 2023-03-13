@@ -753,6 +753,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                                           ])
                                                     ],
                                                   )))))
+                                ],
+                                if (play) ...[
+                                  SizedBox(
+                                    height: 80,
+                                  )
                                 ]
                               ] else ...[
                                 Center(
@@ -1050,7 +1055,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                           });
                                           await _createFolder();
                                           await download(stream!.url.toString(),
-                                              "${removeUnicodeApostrophes(videoResult[current].title)}.mp3");
+                                              "${removeUnicodeApostrophes(playingNow!.title)}.mp3");
                                           Flushbar(
                                             duration:
                                                 const Duration(seconds: 2),
