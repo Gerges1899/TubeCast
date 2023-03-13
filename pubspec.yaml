@@ -53,6 +53,7 @@ dependencies:
   ionicons: ^0.2.2
   flutter_downloader: ^1.10.2
   lecle_downloads_path_provider: ^0.0.2+8
+  flutter_flushbar: ^0.0.2
   
 
 dev_dependencies:

@@ -1,18 +1,16 @@
+// ignore_for_file: depend_on_referenced_packages, non_constant_identifier_names, use_build_context_synchronously, empty_catches, prefer_interpolation_to_compose_strings
+
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:just_audio_background/just_audio_background.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:tube_cast/constants.dart';
 import 'package:youtube_api/youtube_api.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:youtube_data_api/models/playlist.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:just_audio/just_audio.dart';
-import 'dart:math' as math;
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -23,6 +21,7 @@ import 'package:focused_menu_custom/focused_menu.dart';
 import 'package:focused_menu_custom/modals.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
+import 'package:flutter_flushbar/flutter_flushbar.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -34,12 +33,12 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   TextEditingController controller = TextEditingController();
   YoutubeAPI ytApi =
-      new YoutubeAPI(constants.strictKey, maxResults: 500, type: "video");
+      YoutubeAPI(constants.strictKey, maxResults: 500, type: "video");
   ytu.YoutubeDataApi youtubeDataApi = ytu.YoutubeDataApi();
   FocusNode ff = FocusNode();
   List<YouTubeVideo> videoResult = [];
   List<YouTubeVideo> nowVideo = [];
-  YouTubeVideo? playingNow = null;
+  YouTubeVideo? playingNow;
   bool clicked = false;
   bool _isLoading = true;
   bool _isAudioLoading = false;
@@ -54,16 +53,16 @@ class _MyHomePageState extends State<MyHomePage> {
   bool notFound = false;
   bool visible = true;
   bool downloads = false;
-  ConcatenatingAudioSource? Playlist = null;
-  ReceivePort _port = ReceivePort();
+  ConcatenatingAudioSource? Playlist;
+  final ReceivePort _port = ReceivePort();
   String title = '';
   ConnectivityResult connected = ConnectivityResult.none;
   Stream<DurationState>? _durationState;
   List<String> suggestions = [];
   var yt = YoutubeExplode();
   final playerr = AudioPlayer();
-  AudioOnlyStreamInfo? stream = null;
-  Widget playicon = Icon(Icons.pause);
+  AudioOnlyStreamInfo? stream;
+  Widget playicon = const Icon(Icons.pause);
   Directory? dir;
   List<FileSystemEntity> files = [];
   @override
@@ -85,9 +84,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       removeUnicodeApostrophes(
                           videoResult[downloadIndex].title) +
                       ".mp3",
-                  title: removeUnicodeApostrophes(
-                          videoResult[downloadIndex].title) +
-                      ".mp3")));
+                  title:
+                      "${removeUnicodeApostrophes(videoResult[downloadIndex].title)}.mp3")));
           files = dir!.listSync();
         } catch (err) {}
       }
@@ -160,7 +158,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     playerr.dispose();
     yt.close();
     super.dispose();
@@ -187,7 +184,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void reassemble() {
-    // TODO: implement reassemble
     playerr.pause();
     playing = false;
     super.reassemble();
@@ -201,17 +197,17 @@ class _MyHomePageState extends State<MyHomePage> {
             backgroundColor: Colors.black,
             child: ListView(padding: EdgeInsets.zero, children: [
               DrawerHeader(
-                decoration: BoxDecoration(color: Colors.black),
+                decoration: const BoxDecoration(color: Colors.black),
                 child: Container(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     child: SvgPicture.asset(
                       'assets/Horizontal.svg',
                       fit: BoxFit.scaleDown,
                     )),
               ),
               Transform.translate(
-                  offset: Offset(0, -15),
-                  child: Divider(
+                  offset: const Offset(0, -15),
+                  child: const Divider(
                     color: Colors.white,
                     thickness: 3,
                   )),
@@ -241,15 +237,15 @@ class _MyHomePageState extends State<MyHomePage> {
                       },
                     );
                   },
-                  icon: Icon(
+                  icon: const Icon(
                     Ionicons.trending_up_outline,
                     size: 30,
                   ),
-                  label: Text(
+                  label: const Text(
                     'Trending Music',
                     style: TextStyle(fontSize: 20, fontFamily: 'Gotham'),
                   )),
-              Padding(padding: EdgeInsets.only(top: 15)),
+              const Padding(padding: EdgeInsets.only(top: 15)),
               ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                       alignment: Alignment.centerLeft,
@@ -264,15 +260,15 @@ class _MyHomePageState extends State<MyHomePage> {
                       notFound = false;
                     });
                   },
-                  icon: Icon(
+                  icon: const Icon(
                     Ionicons.search_outline,
                     size: 30,
                   ),
-                  label: Text(
+                  label: const Text(
                     'Search results',
                     style: TextStyle(fontSize: 20, fontFamily: 'Gotham'),
                   )),
-              Padding(padding: EdgeInsets.only(top: 15)),
+              const Padding(padding: EdgeInsets.only(top: 15)),
               ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                       alignment: Alignment.centerLeft,
@@ -289,11 +285,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     });
                     setState(() {});
                   },
-                  icon: Icon(
+                  icon: const Icon(
                     Ionicons.cloud_download_outline,
                     size: 30,
                   ),
-                  label: Text(
+                  label: const Text(
                     'Downloads',
                     style: TextStyle(fontSize: 20, fontFamily: 'Gotham'),
                   ))
@@ -320,7 +316,7 @@ class _MyHomePageState extends State<MyHomePage> {
               clicked
                   ? IconButton(
                       iconSize: 30,
-                      icon: Icon(
+                      icon: const Icon(
                         Ionicons.close_outline,
                         size: 30,
                         color: Colors.white,
@@ -334,7 +330,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     )
                   : IconButton(
                       iconSize: 25,
-                      icon: Icon(
+                      icon: const Icon(
                         Ionicons.search,
                         size: 28,
                         color: Colors.white,
@@ -355,27 +351,28 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             bottom: clicked
                 ? PreferredSize(
-                    preferredSize: Size.fromHeight(90),
+                    preferredSize: const Size.fromHeight(90),
                     child: Padding(
-                        padding: EdgeInsets.fromLTRB(15, 10, 15, 10),
+                        padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
                         child: SearchField<String>(
                             focusNode: ff,
-                            marginColor: Color(0xff141414),
+                            marginColor: const Color(0xff141414),
                             suggestions: downloads
                                 ? []
                                 : suggestions
                                     .map((e) => SearchFieldListItem<String>(e,
                                         child: Padding(
-                                            padding: EdgeInsets.only(left: 10),
+                                            padding:
+                                                const EdgeInsets.only(left: 10),
                                             child: Text(
                                               e,
-                                              style: TextStyle(
+                                              style: const TextStyle(
                                                   height: 1.5,
                                                   color: Color(0xff141414),
                                                   fontFamily: 'Gotham'),
                                             ))))
                                     .toList(),
-                            searchStyle: TextStyle(color: Colors.white),
+                            searchStyle: const TextStyle(color: Colors.white),
                             itemHeight: 50,
                             onSuggestionTap: (value) {
                               downloads = false;
@@ -423,15 +420,15 @@ class _MyHomePageState extends State<MyHomePage> {
                             },
                             controller: controller,
                             searchInputDecoration: InputDecoration(
-                              enabledBorder: OutlineInputBorder(
+                              enabledBorder: const OutlineInputBorder(
                                 borderSide:
                                     BorderSide(width: 1, color: Colors.white),
                               ),
                               fillColor: Colors.transparent,
                               filled: true,
                               hintText: 'Search',
-                              hintStyle: TextStyle(color: Colors.white),
-                              constraints: BoxConstraints(maxHeight: 100),
+                              hintStyle: const TextStyle(color: Colors.white),
+                              constraints: const BoxConstraints(maxHeight: 100),
                               border: const OutlineInputBorder(),
                               suffixIcon: controller.text.isEmpty
                                   ? null
@@ -455,7 +452,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       icon: const Icon(Ionicons.close)),
                             ))),
                   )
-                : PreferredSize(
+                : const PreferredSize(
                     preferredSize:
                         Size.fromHeight(0), // here the desired height
                     child: SizedBox.shrink())),
@@ -477,7 +474,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             if (connected == ConnectivityResult.wifi ||
                                 connected == ConnectivityResult.mobile) ...[
                               if (trending && !_isLoading) ...[
-                                Padding(
+                                const Padding(
                                     padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
                                     child: Text(
                                       'Trending music Right Now ..',
@@ -487,7 +484,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     ))
                               ] else if (!trending && !_isLoading) ...[
                                 if (!notFound) ...[
-                                  Padding(
+                                  const Padding(
                                       padding:
                                           EdgeInsets.fromLTRB(28, 20, 28, 0),
                                       child: Text(
@@ -497,7 +494,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             fontFamily: 'Gotham'),
                                       ))
                                 ] else ...[
-                                  Padding(
+                                  const Padding(
                                       padding:
                                           EdgeInsets.fromLTRB(28, 20, 28, 0),
                                       child: Text(
@@ -510,7 +507,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 ]
                               ]
                             ] else ...[
-                              Padding(
+                              const Padding(
                                   padding: EdgeInsets.fromLTRB(28, 20, 28, 0),
                                   child: Text(
                                     'No Internet Connection..\nBut you can still enjoy your downloaded videos.',
@@ -538,18 +535,19 @@ class _MyHomePageState extends State<MyHomePage> {
                                       blurSize: 0.25,
                                       blurBackgroundColor: Colors.black54,
                                       menuOffset: -20,
-                                      borderColor: Color(0xff141414),
+                                      borderColor: const Color(0xff141414),
                                       openWithTap: false,
                                       onPressed: () {},
                                       menuItems: <FocusedMenuItem>[
                                         FocusedMenuItem(
-                                            backgroundColor: Color(0xff141414),
-                                            title: Text(
+                                            backgroundColor:
+                                                const Color(0xff141414),
+                                            title: const Text(
                                               "Download",
                                               style: TextStyle(
                                                   color: Color(0xff3e4da0)),
                                             ),
-                                            trailingIcon: Icon(
+                                            trailingIcon: const Icon(
                                               Ionicons.cloud_download_outline,
                                               color: Color(0xff3e4da0),
                                             ),
@@ -570,31 +568,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
                                               await download(
                                                   stream!.url.toString(),
-                                                  removeUnicodeApostrophes(
-                                                          videoResult[i]
-                                                              .title) +
-                                                      ".mp3");
-                                              showDialog(
-                                                  context: context,
-                                                  builder: (context) {
-                                                    Future.delayed(
-                                                        Duration(
-                                                            milliseconds: 500),
-                                                        () {
-                                                      Navigator.of(context)
-                                                          .pop(true);
-                                                    });
-                                                    return AlertDialog(
-                                                      backgroundColor:
-                                                          Color(0xff141414),
-                                                      title: Text(
-                                                        'audio is started to download..',
-                                                        style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 12),
-                                                      ),
-                                                    );
-                                                  });
+                                                  "${removeUnicodeApostrophes(videoResult[i].title)}.mp3");
+                                              Flushbar(
+                                                duration:
+                                                    const Duration(seconds: 2),
+                                                backgroundColor:
+                                                    const Color(0xff141414),
+                                                flushbarPosition:
+                                                    FlushbarPosition.TOP,
+                                                title: "Tubify",
+                                                message:
+                                                    "\naudio is started to download.",
+                                              ).show(context);
                                               setState(() {
                                                 _isAudioDownloading = false;
                                               });
@@ -602,7 +587,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       ],
                                       child: Container(
                                           height: 285,
-                                          padding: EdgeInsets.fromLTRB(
+                                          padding: const EdgeInsets.fromLTRB(
                                               28, 15, 28, 0),
                                           child: GestureDetector(
                                               onTap: () async {
@@ -659,7 +644,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                                         BorderRadius.circular(
                                                             5),
                                                   ),
-                                                  color: Color(0xff141414),
+                                                  color:
+                                                      const Color(0xff141414),
                                                   child: Column(
                                                     crossAxisAlignment:
                                                         CrossAxisAlignment
@@ -682,7 +668,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                       children: [
                                                                         ClipRRect(
                                                                             borderRadius:
-                                                                                BorderRadius.only(topLeft: Radius.circular(5), topRight: Radius.circular(5)),
+                                                                                const BorderRadius.only(topLeft: Radius.circular(5), topRight: Radius.circular(5)),
                                                                             child: FadeInImage.assetNetwork(image: videoResult[i].thumbnail.medium.url!, placeholder: 'assets/placeholder.png', height: 180, fit: BoxFit.fitHeight)),
                                                                         Center(
                                                                             child:
@@ -690,15 +676,15 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                           radius:
                                                                               27,
                                                                           backgroundColor:
-                                                                              Color(0xff3e4da0),
+                                                                              const Color(0xff3e4da0),
                                                                           child: _isAudioDownloading && downloadIndex == i
-                                                                              ? SizedBox(
+                                                                              ? const SizedBox(
                                                                                   height: 20,
                                                                                   width: 20,
                                                                                   child: CircularProgressIndicator(
                                                                                     color: Colors.white,
                                                                                   ))
-                                                                              : Padding(
+                                                                              : const Padding(
                                                                                   padding: EdgeInsets.only(bottom: 4, left: 5),
                                                                                   child: Icon(
                                                                                     Ionicons.play_outline,
@@ -711,7 +697,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                     alignment:
                                                                         Alignment
                                                                             .centerRight,
-                                                                    padding: EdgeInsets.only(
+                                                                    padding: const EdgeInsets
+                                                                            .only(
                                                                         bottom:
                                                                             5,
                                                                         right:
@@ -721,16 +708,18 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                               i]
                                                                           .duration
                                                                           .toString(),
-                                                                      style: TextStyle(
+                                                                      style: const TextStyle(
                                                                           color:
                                                                               Colors.white),
                                                                     ),
                                                                   ),
                                                                 ]),
                                                             Transform.translate(
-                                                                offset: Offset(
-                                                                    0, 8),
-                                                                child: Divider(
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 8),
+                                                                child:
+                                                                    const Divider(
                                                                   color: Color(
                                                                       0xff3e4da0),
                                                                   thickness: 3,
@@ -742,8 +731,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                                           children: [
                                                             Expanded(
                                                                 child: Padding(
-                                                                    padding: EdgeInsets
-                                                                        .fromLTRB(
+                                                                    padding:
+                                                                        const EdgeInsets.fromLTRB(
                                                                             20,
                                                                             15,
                                                                             20,
@@ -753,11 +742,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                       maxLines:
                                                                           2,
                                                                       text: TextSpan(
-                                                                          locale: Locale(
+                                                                          locale: const Locale(
                                                                               'en'),
                                                                           text: removeUnicodeApostrophes(videoResult[i]
                                                                               .title),
-                                                                          style: TextStyle(
+                                                                          style: const TextStyle(
                                                                               color: Colors.white,
                                                                               height: 1.5)),
                                                                     )))
@@ -768,8 +757,9 @@ class _MyHomePageState extends State<MyHomePage> {
                               ] else ...[
                                 Center(
                                     child: Transform.translate(
-                                        offset: Offset(0, 25),
-                                        child: CircularProgressIndicator())),
+                                        offset: const Offset(0, 25),
+                                        child:
+                                            const CircularProgressIndicator())),
                               ]
                             ]
                           ])))
@@ -777,9 +767,9 @@ class _MyHomePageState extends State<MyHomePage> {
                       Container(
                         color: Colors.black,
                         child: ListView(
-                          padding: EdgeInsets.fromLTRB(28, 0, 28, 0),
+                          padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
                           children: [
-                            Padding(
+                            const Padding(
                                 padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
                                 child: Text(
                                   'Your Downloads.',
@@ -797,18 +787,19 @@ class _MyHomePageState extends State<MyHomePage> {
                                   blurSize: 0.25,
                                   blurBackgroundColor: Colors.black54,
                                   menuOffset: -20,
-                                  borderColor: Color(0xff141414),
+                                  borderColor: const Color(0xff141414),
                                   openWithTap: false,
                                   onPressed: () {},
                                   menuItems: <FocusedMenuItem>[
                                     FocusedMenuItem(
-                                        backgroundColor: Color(0xff141414),
-                                        title: Text(
+                                        backgroundColor:
+                                            const Color(0xff141414),
+                                        title: const Text(
                                           "Delete",
                                           style: TextStyle(
                                               color: Colors.redAccent),
                                         ),
-                                        trailingIcon: Icon(
+                                        trailingIcon: const Icon(
                                           Icons.delete,
                                           color: Colors.redAccent,
                                         ),
@@ -852,7 +843,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                         }
                                       },
                                       child: Card(
-                                          margin: EdgeInsets.only(bottom: 15),
+                                          margin:
+                                              const EdgeInsets.only(bottom: 15),
                                           color: dplay &&
                                                   playerr
                                                           .sequenceState!
@@ -860,16 +852,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                                           .tag
                                                           .title ==
                                                       i.path.split('/').last
-                                              ? Color(0xff3e4da0)
-                                              : Color(0xff141414),
+                                              ? const Color(0xff3e4da0)
+                                              : const Color(0xff141414),
                                           child: Padding(
-                                              padding: EdgeInsets.all(20),
+                                              padding: const EdgeInsets.all(20),
                                               child: Wrap(
                                                   spacing: 20,
                                                   crossAxisAlignment:
                                                       WrapCrossAlignment.center,
                                                   children: [
-                                                    CircleAvatar(
+                                                    const CircleAvatar(
                                                         radius: 25,
                                                         backgroundColor:
                                                             Colors.transparent,
@@ -898,13 +890,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                 maxLines: 2,
                                                                 text: TextSpan(
                                                                     locale:
-                                                                        Locale(
+                                                                        const Locale(
                                                                             'en'),
                                                                     text: i.path
                                                                         .split(
                                                                             '/')
                                                                         .last,
-                                                                    style: TextStyle(
+                                                                    style: const TextStyle(
                                                                         color: Colors
                                                                             .white,
                                                                         height:
@@ -921,7 +913,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         ? player()
                         : dplay
                             ? player2()
-                            : SizedBox.shrink()
+                            : const SizedBox.shrink()
                   ]));
         }));
   }
@@ -965,37 +957,37 @@ class _MyHomePageState extends State<MyHomePage> {
               colors: height == 80
                   ? [
                       Colors.black,
-                      Color(0xff3e4da0),
+                      const Color(0xff3e4da0),
                     ]
                   : [
                       Colors.black,
-                      Color(0xff3e4da0),
+                      const Color(0xff3e4da0),
                       Colors.blueGrey,
                     ],
             )),
             height: height,
             child: height == 80
                 ? Padding(
-                    padding: EdgeInsets.only(right: 28),
+                    padding: const EdgeInsets.only(right: 28),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Image.network(playingNow!.thumbnail.small.url!),
-                        Spacer(),
+                        const Spacer(),
                         Expanded(
                             flex: 5,
                             child: RichText(
                               maxLines: 3,
                               text: TextSpan(
-                                  locale: Locale('en'),
+                                  locale: const Locale('en'),
                                   text: removeUnicodeApostrophes(
                                       playingNow!.title),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       color: Colors.white,
                                       height: 1.5,
                                       fontSize: 11)),
                             )),
-                        Spacer(),
+                        const Spacer(),
                         !_isAudioLoading
                             ? playing
                                 ? IconButton(
@@ -1005,7 +997,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         playing = !playing;
                                       });
                                     },
-                                    icon: Icon(Ionicons.pause_outline),
+                                    icon: const Icon(Ionicons.pause_outline),
                                     color: Colors.white,
                                     iconSize: 30,
                                   )
@@ -1016,11 +1008,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                         playing = !playing;
                                       });
                                     },
-                                    icon: Icon(Ionicons.play_outline),
+                                    icon: const Icon(Ionicons.play_outline),
                                     color: Colors.white,
                                     iconSize: 30,
                                   )
-                            : CircularProgressIndicator(
+                            : const CircularProgressIndicator(
                                 color: Colors.white,
                               ),
                       ],
@@ -1034,7 +1026,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       // mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Padding(
-                            padding: EdgeInsets.only(right: 5, left: 5),
+                            padding: const EdgeInsets.only(right: 5, left: 5),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -1044,7 +1036,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                       height = 80;
                                     });
                                   },
-                                  icon: Icon(Ionicons.chevron_down_outline),
+                                  icon:
+                                      const Icon(Ionicons.chevron_down_outline),
                                   color: Colors.white,
                                   iconSize: 30,
                                 ),
@@ -1056,43 +1049,29 @@ class _MyHomePageState extends State<MyHomePage> {
                                             downloadIndex = current;
                                           });
                                           await _createFolder();
-                                          await download(
-                                              stream!.url.toString(),
-                                              removeUnicodeApostrophes(
-                                                      videoResult[current]
-                                                          .title) +
-                                                  ".mp3");
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                Future.delayed(
-                                                    Duration(
-                                                        milliseconds: 1500),
-                                                    () {
-                                                  Navigator.of(context)
-                                                      .pop(true);
-                                                });
-                                                return AlertDialog(
-                                                  backgroundColor:
-                                                      Color(0xff141414),
-                                                  title: Text(
-                                                    'audio is started to download..',
-                                                    style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 12),
-                                                  ),
-                                                );
-                                              });
+                                          await download(stream!.url.toString(),
+                                              "${removeUnicodeApostrophes(videoResult[current].title)}.mp3");
+                                          Flushbar(
+                                            duration:
+                                                const Duration(seconds: 2),
+                                            backgroundColor:
+                                                const Color(0xff141414),
+                                            flushbarPosition:
+                                                FlushbarPosition.TOP,
+                                            title: "Tubify",
+                                            message:
+                                                "\naudio is started to download.",
+                                          ).show(context);
                                           setState(() {
                                             _isAudioDownloading = false;
                                           });
                                         },
-                                        icon: Icon(
+                                        icon: const Icon(
                                             Ionicons.cloud_download_outline),
                                         color: Colors.white,
                                         iconSize: 30,
                                       )
-                                    : Padding(
+                                    : const Padding(
                                         padding: EdgeInsets.only(right: 11),
                                         child: SizedBox(
                                             height: 25,
@@ -1119,10 +1098,10 @@ class _MyHomePageState extends State<MyHomePage> {
                             width: 340,
                             child: RichText(
                               text: TextSpan(
-                                  locale: Locale('en'),
+                                  locale: const Locale('en'),
                                   text: removeUnicodeApostrophes(
                                       playingNow!.title),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       color: Colors.white,
                                       height: 1.5,
                                       fontSize: 16)),
@@ -1148,11 +1127,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                 child: ProgressBar(
                                   timeLabelPadding: 5,
                                   timeLabelTextStyle:
-                                      TextStyle(color: Colors.white),
+                                      const TextStyle(color: Colors.white),
                                   progress: progress,
                                   buffered: buffered,
                                   total: total,
-                                  progressBarColor: Color(0xff141414),
+                                  progressBarColor: const Color(0xff141414),
                                   baseBarColor: Colors.white.withOpacity(0.24),
                                   bufferedBarColor:
                                       Colors.white.withOpacity(0.24),
@@ -1194,7 +1173,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                           IconButton(
                                             onPressed: () async {
                                               if (progress <
-                                                  Duration(seconds: 5)) {
+                                                  const Duration(seconds: 5)) {
                                                 setState(() {
                                                   current--;
                                                   playingNow =
@@ -1249,13 +1228,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 playerr.seek(Duration.zero);
                                               }
                                             },
-                                            icon: Icon(Ionicons
+                                            icon: const Icon(Ionicons
                                                 .play_skip_back_outline),
                                             color: Colors.white,
                                             iconSize: 50,
                                           )
                                         ] else ...[
-                                          SizedBox(
+                                          const SizedBox(
                                             width: 66,
                                           )
                                         ],
@@ -1268,7 +1247,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                         playing = !playing;
                                                       });
                                                     },
-                                                    icon: Icon(
+                                                    icon: const Icon(
                                                         Ionicons.pause_outline),
                                                     color: Colors.white,
                                                     iconSize: 50,
@@ -1280,12 +1259,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                                         playing = !playing;
                                                       });
                                                     },
-                                                    icon: Icon(
+                                                    icon: const Icon(
                                                         Ionicons.play_outline),
                                                     color: Colors.white,
                                                     iconSize: 50,
                                                   )
-                                            : CircularProgressIndicator(
+                                            : const CircularProgressIndicator(
                                                 strokeWidth: 5,
                                                 color: Colors.white,
                                               ),
@@ -1341,13 +1320,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                               });
                                               playerr.play();
                                             },
-                                            icon: Icon(Ionicons
+                                            icon: const Icon(Ionicons
                                                 .play_skip_forward_outline),
                                             color: Colors.white,
                                             iconSize: 50,
                                           )
                                         ] else ...[
-                                          SizedBox(
+                                          const SizedBox(
                                             width: 66,
                                           )
                                         ],
@@ -1385,22 +1364,22 @@ class _MyHomePageState extends State<MyHomePage> {
                   ? [
                       Colors.black,
                       // Color(0xff1DB954),
-                      Color(0xff3e4da0),
+                      const Color(0xff3e4da0),
                     ]
                   : [
                       Colors.black,
-                      Color(0xff3e4da0),
+                      const Color(0xff3e4da0),
                       Colors.blueGrey,
                     ],
             )),
             height: height,
             child: height == 80
                 ? Padding(
-                    padding: EdgeInsets.only(right: 28, left: 18),
+                    padding: const EdgeInsets.only(right: 28, left: 18),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        CircleAvatar(
+                        const CircleAvatar(
                             backgroundColor: Colors.transparent,
                             radius: 25,
                             child: Icon(
@@ -1408,20 +1387,20 @@ class _MyHomePageState extends State<MyHomePage> {
                               size: 30,
                               color: Colors.white,
                             )),
-                        Spacer(),
+                        const Spacer(),
                         Expanded(
                             flex: 6,
                             child: RichText(
                               maxLines: 3,
                               text: TextSpan(
-                                  locale: Locale('en'),
+                                  locale: const Locale('en'),
                                   text: title,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       color: Colors.white,
                                       height: 1.5,
                                       fontSize: 11)),
                             )),
-                        Spacer(),
+                        const Spacer(),
                         playing
                             ? IconButton(
                                 onPressed: () {
@@ -1430,7 +1409,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     playing = !playing;
                                   });
                                 },
-                                icon: Icon(Ionicons.pause_outline),
+                                icon: const Icon(Ionicons.pause_outline),
                                 color: Colors.white,
                                 iconSize: 30,
                               )
@@ -1441,7 +1420,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     playing = !playing;
                                   });
                                 },
-                                icon: Icon(Ionicons.play_outline),
+                                icon: const Icon(Ionicons.play_outline),
                                 color: Colors.white,
                                 iconSize: 30,
                               )
@@ -1455,7 +1434,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Padding(
-                              padding: EdgeInsets.only(right: 5, left: 5),
+                              padding: const EdgeInsets.only(right: 5, left: 5),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 mainAxisAlignment: MainAxisAlignment.start,
@@ -1466,7 +1445,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                         height = 80;
                                       });
                                     },
-                                    icon: Icon(Ionicons.chevron_down_outline),
+                                    icon: const Icon(
+                                        Ionicons.chevron_down_outline),
                                     color: Colors.white,
                                     iconSize: 30,
                                   ),
@@ -1477,7 +1457,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   top: MediaQuery.of(context).size.height / 20,
                                   left: 20,
                                   right: 20),
-                              child: CircleAvatar(
+                              child: const CircleAvatar(
                                   radius: 120,
                                   backgroundColor: Colors.transparent,
                                   child: Icon(
@@ -1494,9 +1474,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                   width: 340,
                                   child: RichText(
                                     text: TextSpan(
-                                        locale: Locale('en'),
+                                        locale: const Locale('en'),
                                         text: title,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                             color: Colors.white,
                                             height: 1.5,
                                             fontSize: 16)),
@@ -1521,11 +1501,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                   child: ProgressBar(
                                     timeLabelPadding: 5,
                                     timeLabelTextStyle:
-                                        TextStyle(color: Colors.white),
+                                        const TextStyle(color: Colors.white),
                                     progress: progress,
                                     buffered: buffered,
                                     total: total,
-                                    progressBarColor: Color(0xff141414),
+                                    progressBarColor: const Color(0xff141414),
                                     baseBarColor:
                                         Colors.white.withOpacity(0.24),
                                     bufferedBarColor:
@@ -1567,19 +1547,20 @@ class _MyHomePageState extends State<MyHomePage> {
                                             IconButton(
                                               onPressed: () {
                                                 if (progress <
-                                                    Duration(seconds: 5)) {
+                                                    const Duration(
+                                                        seconds: 5)) {
                                                   playerr.seekToPrevious();
                                                 } else {
                                                   playerr.seek(Duration.zero);
                                                 }
                                               },
-                                              icon: Icon(Ionicons
+                                              icon: const Icon(Ionicons
                                                   .play_skip_back_outline),
                                               color: Colors.white,
                                               iconSize: 50,
                                             ),
                                           ] else ...[
-                                            SizedBox(
+                                            const SizedBox(
                                               width: 66,
                                             )
                                           ],
@@ -1591,7 +1572,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                       playing = !playing;
                                                     });
                                                   },
-                                                  icon: Icon(
+                                                  icon: const Icon(
                                                       Ionicons.pause_outline),
                                                   color: Colors.white,
                                                   iconSize: 50,
@@ -1603,7 +1584,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                       playing = !playing;
                                                     });
                                                   },
-                                                  icon: Icon(
+                                                  icon: const Icon(
                                                       Ionicons.play_outline),
                                                   color: Colors.white,
                                                   iconSize: 50,
@@ -1613,13 +1594,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                               onPressed: () async {
                                                 playerr.seekToNext();
                                               },
-                                              icon: Icon(Ionicons
+                                              icon: const Icon(Ionicons
                                                   .play_skip_forward_outline),
                                               color: Colors.white,
                                               iconSize: 50,
                                             )
                                           ] else ...[
-                                            SizedBox(
+                                            const SizedBox(
                                               width: 66,
                                             )
                                           ],
@@ -1631,11 +1612,11 @@ class _MyHomePageState extends State<MyHomePage> {
   getFiles() async {
     files = dir!.listSync();
     Playlist = ConcatenatingAudioSource(children: []);
-    files.forEach((element) {
+    for (var element in files) {
       Playlist!.add(AudioSource.uri(Uri.file(element.path),
           tag: MediaItem(
               id: element.path, title: element.path.split('/').last)));
-    });
+    }
     setState(() {});
     // playerr.setAudioSource(ConcatenatingAudioSource(children: Playlist));
   }
@@ -1704,13 +1685,13 @@ class _MyHomePageState extends State<MyHomePage> {
         context: context,
         builder: (context) => AlertDialog(
           actionsAlignment: MainAxisAlignment.spaceBetween,
-          backgroundColor: Color(0xff141414),
+          backgroundColor: const Color(0xff141414),
           title: const Text(
             "Allow \"Tubify\" to access your files while using the app",
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white),
           ),
-          titleTextStyle: TextStyle(fontFamily: 'Gotham', fontSize: 18),
+          titleTextStyle: const TextStyle(fontFamily: 'Gotham', fontSize: 18),
           content: const Text(
             "the app will access the files to be able to play your downloaded audios.",
             textAlign: TextAlign.center,
@@ -1757,13 +1738,13 @@ class _MyHomePageState extends State<MyHomePage> {
         context: context,
         builder: (context) => AlertDialog(
           actionsAlignment: MainAxisAlignment.spaceBetween,
-          backgroundColor: Color(0xff141414),
+          backgroundColor: const Color(0xff141414),
           title: const Text(
             "Allow \"Tubify\" to send you Notifactions",
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white),
           ),
-          titleTextStyle: TextStyle(fontFamily: 'Gotham', fontSize: 18),
+          titleTextStyle: const TextStyle(fontFamily: 'Gotham', fontSize: 18),
           content: const Text(
             "the app will access your notifications to be able to download audios.",
             textAlign: TextAlign.center,
