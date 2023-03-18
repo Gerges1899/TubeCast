@@ -173,6 +173,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future download(String url, String name) async {
     await FlutterDownloader.enqueue(
+      timeout: 3000,
       url: url,
       fileName: name,
       headers: {},
@@ -568,7 +569,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
                                               await download(
                                                   stream!.url.toString(),
-                                                  "${removeUnicodeApostrophes(videoResult[i].title)}.mp3");
+                                                  "${removeUnicodeApostrophes2(videoResult[i].title)}.mp3");
                                               Flushbar(
                                                 duration:
                                                     const Duration(seconds: 2),
@@ -754,7 +755,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                     ],
                                                   )))))
                                 ],
-                                if (play) ...[
+                                if (play || dplay) ...[
                                   SizedBox(
                                     height: 80,
                                   )
@@ -908,7 +909,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                             1.5)),
                                                               ))
                                                             ]))
-                                                  ])))))
+                                                  ]))))),
+                            ],
+                            if (dplay || play) ...[
+                              SizedBox(
+                                height: 80,
+                              )
                             ]
                           ],
                         ),
@@ -926,6 +932,19 @@ class _MyHomePageState extends State<MyHomePage> {
   String removeUnicodeApostrophes(String strInput) {
     String strModified = strInput.replaceAll('&#39;', "\'");
     strModified = strModified.replaceAll('&quot;', "");
+    strModified = strModified.replaceAll('&amp;', "&");
+
+    return strModified;
+  }
+
+  String removeUnicodeApostrophes2(String strInput) {
+    String strModified = strInput.replaceAll('&#39;', "\'");
+    strModified = strModified.replaceAll('&quot;', "");
+    strModified = strModified.replaceAll('&amp;', "&");
+    strModified = strModified.split('-').toList().take(2).join('-');
+    strModified = strModified.split('|').toList().take(2).join('-');
+    strModified = strModified.replaceAll('/', "-");
+    strModified = strModified.replaceAll('|', "-");
     return strModified;
   }
 
@@ -1055,7 +1074,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                           });
                                           await _createFolder();
                                           await download(stream!.url.toString(),
-                                              "${removeUnicodeApostrophes(playingNow!.title)}.mp3");
+                                              "${removeUnicodeApostrophes2(playingNow!.title)}.mp3");
                                           Flushbar(
                                             duration:
                                                 const Duration(seconds: 2),
