@@ -55,6 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool visible = true;
   bool downloads = false;
   bool playlist = false;
+  String playfrom = '';
   ConcatenatingAudioSource? Playlist;
   final ReceivePort _port = ReceivePort();
   String title = '';
@@ -67,6 +68,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget playicon = const Icon(Icons.pause);
   Directory? dir;
   List<FileSystemEntity> files = [];
+  List<FileSystemEntity> playlistFiles = [];
+  Directory? playlistFile = null;
   List<Directory> playlists = [];
   @override
   void initState() {
@@ -77,22 +80,6 @@ class _MyHomePageState extends State<MyHomePage> {
       String id = data[0];
       DownloadTaskStatus status = data[1];
       int progress = data[2];
-      // if (status == DownloadTaskStatus.complete) {
-      //   try {
-      //     Playlist!.add(AudioSource.uri(
-      //         Uri.parse('${dir!.path}/Tubify/' +
-      //             removeUnicodeApostrophes(videoResult[downloadIndex].title) +
-      //             ".mp3"),
-      //         tag: MediaItem(
-      //             id: '${dir!.path}/Tubify/' +
-      //                 removeUnicodeApostrophes(
-      //                     videoResult[downloadIndex].title) +
-      //                 ".mp3",
-      //             title:
-      //                 "${removeUnicodeApostrophes(videoResult[downloadIndex].title)}.mp3")));
-      //     files = dir!.listSync();
-      //   } catch (err) {}
-      // }
       setState(() {});
     });
 
@@ -1125,135 +1112,131 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: ListView(
                           padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
                           children: [
-                            const Padding(
-                                padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
-                                child: Text(
-                                  'Your playlists.',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontFamily: 'Gotham',
-                                      height: 1.5),
-                                )),
-                            for (var i in playlists) ...[
-                              FocusedMenuHolder(
-                                  menuItemExtent: 45,
-                                  menuWidth:
-                                      MediaQuery.of(context).size.width * 0.50,
-                                  animateMenuItems: true,
-                                  blurSize: 0.25,
-                                  blurBackgroundColor: Colors.black54,
-                                  menuOffset: -20,
-                                  borderColor: const Color(0xff141414),
-                                  openWithTap: false,
-                                  onPressed: () {},
-                                  menuItems: <FocusedMenuItem>[
-                                    FocusedMenuItem(
-                                        backgroundColor:
-                                            const Color(0xff141414),
-                                        title: const Text(
-                                          "Delete",
-                                          style: TextStyle(
-                                              color: Colors.redAccent),
-                                        ),
-                                        trailingIcon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.redAccent,
-                                        ),
-                                        onPressed: () async {
-                                          if (Directory(i.path)
+                            if (playlists.length > 0) ...[
+                              const Padding(
+                                  padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
+                                  child: Text(
+                                    'Your playlists.',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: 'Gotham',
+                                        height: 1.5),
+                                  ))
+                            ],
+                            if (playlists.length > 0) ...[
+                              for (var i in playlists) ...[
+                                FocusedMenuHolder(
+                                    menuItemExtent: 45,
+                                    menuWidth:
+                                        MediaQuery.of(context).size.width *
+                                            0.50,
+                                    animateMenuItems: true,
+                                    blurSize: 0.25,
+                                    blurBackgroundColor: Colors.black54,
+                                    menuOffset: -20,
+                                    borderColor: const Color(0xff141414),
+                                    openWithTap: false,
+                                    onPressed: () {},
+                                    menuItems: <FocusedMenuItem>[
+                                      FocusedMenuItem(
+                                          backgroundColor:
+                                              const Color(0xff141414),
+                                          title: const Text(
+                                            "Delete",
+                                            style: TextStyle(
+                                                color: Colors.redAccent),
+                                          ),
+                                          trailingIcon: const Icon(
+                                            Icons.delete,
+                                            color: Colors.redAccent,
+                                          ),
+                                          onPressed: () async {
+                                            if (Directory(i.path)
+                                                    .listSync()
+                                                    .length >
+                                                0) {
+                                              Directory(i.path)
                                                   .listSync()
-                                                  .length >
-                                              0) {
-                                            Directory(i.path)
-                                                .listSync()
-                                                .forEach((element) async {
-                                              await File(element.path).rename(dir!
-                                                      .path +
-                                                  '/${element.path.split('/').last}');
-                                            });
-                                          }
-                                          await Directory(i.path).delete();
-                                          await getFiles();
-                                          playerr.setAudioSource(Playlist!);
-                                          dplay = play = false;
-                                          playerr.stop();
+                                                  .forEach((element) async {
+                                                await File(element.path).rename(
+                                                    dir!.path +
+                                                        '/${element.path.split('/').last}');
+                                              });
+                                            }
+                                            await Directory(i.path).delete();
+                                            await getFiles();
+                                            playerr.setAudioSource(Playlist!);
+                                            dplay = play = false;
+                                            playerr.stop();
+
+                                            setState(() {});
+                                          }),
+                                    ],
+                                    child: GestureDetector(
+                                        onTap: () async {
+                                          playlist = true;
+                                          playlistFile = i;
+                                          await initPlayList(i);
                                           setState(() {});
-                                        }),
-                                  ],
-                                  child: GestureDetector(
-                                      onTap: () async {
-                                        // if (!dplay) {
-                                        //   await playerr
-                                        //       .setAudioSource(Playlist!);
-                                        //   setState(() {
-                                        //     play = false;
-                                        //     title = i.path.split('/').last;
-                                        //     playerr.seek(Duration.zero,
-                                        //         index: files.indexOf(i));
-                                        //     playerr.play();
-                                        //     dplay = true;
-                                        //   });
-                                        // } else {
-                                        //   title = i.path.split('/').last;
-                                        //   playerr.seek(Duration.zero,
-                                        //       index: files.indexOf(i));
-                                        //   playerr.play();
-                                        // }
-                                      },
-                                      child: Card(
-                                          margin:
-                                              const EdgeInsets.only(bottom: 15),
-                                          color: const Color(0xff141414),
-                                          child: Padding(
-                                              padding: const EdgeInsets.all(20),
-                                              child: Wrap(
-                                                  spacing: 20,
-                                                  crossAxisAlignment:
-                                                      WrapCrossAlignment.center,
-                                                  children: [
-                                                    const CircleAvatar(
-                                                        radius: 25,
-                                                        backgroundColor:
-                                                            Colors.transparent,
-                                                        child: Icon(
-                                                          Icons
-                                                              .my_library_music,
-                                                          color: Colors.white,
-                                                          size: 40,
-                                                        )),
-                                                    SizedBox(
-                                                        width: MediaQuery.of(
-                                                                    context)
-                                                                .size
-                                                                .width *
-                                                            (1.7 / 3),
-                                                        child: Flex(
-                                                            direction:
-                                                                Axis.horizontal,
-                                                            children: [
-                                                              Expanded(
-                                                                  child:
-                                                                      RichText(
-                                                                overflow:
-                                                                    TextOverflow
-                                                                        .ellipsis,
-                                                                maxLines: 2,
-                                                                text: TextSpan(
-                                                                    locale:
-                                                                        const Locale(
-                                                                            'en'),
-                                                                    text: i.path
-                                                                        .split(
-                                                                            '/')
-                                                                        .last,
-                                                                    style: const TextStyle(
-                                                                        color: Colors
-                                                                            .white,
-                                                                        height:
-                                                                            1.5)),
-                                                              ))
-                                                            ]))
-                                                  ]))))),
+                                        },
+                                        child: Card(
+                                            margin: const EdgeInsets.only(
+                                                bottom: 15),
+                                            color: const Color(0xff141414),
+                                            child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(20),
+                                                child: Wrap(
+                                                    spacing: 20,
+                                                    crossAxisAlignment:
+                                                        WrapCrossAlignment
+                                                            .center,
+                                                    children: [
+                                                      const CircleAvatar(
+                                                          radius: 25,
+                                                          backgroundColor:
+                                                              Colors
+                                                                  .transparent,
+                                                          child: Icon(
+                                                            Icons
+                                                                .my_library_music,
+                                                            color: Colors.white,
+                                                            size: 40,
+                                                          )),
+                                                      SizedBox(
+                                                          width: MediaQuery.of(
+                                                                      context)
+                                                                  .size
+                                                                  .width *
+                                                              (1.7 / 3),
+                                                          child: Flex(
+                                                              direction: Axis
+                                                                  .horizontal,
+                                                              children: [
+                                                                Expanded(
+                                                                    child:
+                                                                        RichText(
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
+                                                                  maxLines: 2,
+                                                                  text: TextSpan(
+                                                                      locale: const Locale(
+                                                                          'en'),
+                                                                      text: i
+                                                                          .path
+                                                                          .split(
+                                                                              '/')
+                                                                          .last,
+                                                                      style: const TextStyle(
+                                                                          color: Colors
+                                                                              .white,
+                                                                          height:
+                                                                              1.5)),
+                                                                ))
+                                                              ]))
+                                                    ]))))),
+                              ]
                             ],
                             const Padding(
                                 padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
@@ -1321,7 +1304,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   ],
                                   child: GestureDetector(
                                       onTap: () async {
-                                        if (!dplay) {
+                                        if (!dplay || playfrom != 'downloads') {
                                           await playerr
                                               .setAudioSource(Playlist!);
                                           setState(() {
@@ -1338,6 +1321,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                               index: files.indexOf(i));
                                           playerr.play();
                                         }
+                                        setState(() {
+                                          playfrom = 'downloads';
+                                        });
                                       },
                                       child: Card(
                                           margin:
@@ -1410,8 +1396,201 @@ class _MyHomePageState extends State<MyHomePage> {
                           ],
                         ),
                       )
-                    ] else if (downloads && playlist)
-                      ...[],
+                    ] else if (downloads && playlist) ...[
+                      Container(
+                          color: Colors.black,
+                          child: ListView(
+                              padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
+                              children: [
+                                Padding(
+                                    padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
+                                    child: TextButton(
+                                      child: Text(
+                                        '< Back to Downloands',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: 'Gotham',
+                                            height: 1.5),
+                                      ),
+                                      onPressed: () async {
+                                        playlist = false;
+                                        await getFiles();
+                                      },
+                                    )),
+                                Padding(
+                                    padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
+                                    child: Text(
+                                      playlistFile!.path.split('/').last +
+                                          ' Playlist',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontFamily: 'Gotham',
+                                          height: 1.5),
+                                    )),
+                                for (var i in playlistFiles) ...[
+                                  FocusedMenuHolder(
+                                      menuItemExtent: 45,
+                                      menuWidth:
+                                          MediaQuery.of(context).size.width *
+                                              0.50,
+                                      animateMenuItems: true,
+                                      blurSize: 0.25,
+                                      blurBackgroundColor: Colors.black54,
+                                      menuOffset: -20,
+                                      borderColor: const Color(0xff141414),
+                                      openWithTap: false,
+                                      onPressed: () {},
+                                      menuItems: <FocusedMenuItem>[
+                                        FocusedMenuItem(
+                                            backgroundColor:
+                                                const Color(0xff141414),
+                                            title: const Text(
+                                              "Delete",
+                                              style: TextStyle(
+                                                  color: Colors.redAccent),
+                                            ),
+                                            trailingIcon: const Icon(
+                                              Icons.delete,
+                                              color: Colors.redAccent,
+                                            ),
+                                            onPressed: () {
+                                              bool pl = false;
+                                              if (playerr.sequenceState !=
+                                                  null) {
+                                                pl = i.path.split('/').last ==
+                                                    playerr
+                                                        .sequenceState!
+                                                        .currentSource!
+                                                        .tag
+                                                        .title;
+                                                if (pl) {
+                                                  playerr.stop();
+                                                  dplay = false;
+                                                }
+                                                Playlist!
+                                                    .removeAt(files.indexOf(i));
+                                              }
+                                              File(i.path).delete();
+                                              playlistFiles = [];
+                                              playlists = [];
+                                              playlistFile!
+                                                  .listSync(recursive: true)
+                                                  .forEach((element) {
+                                                if (p.extension(element.path) ==
+                                                    '.mp3') {
+                                                  playlistFiles.add(element);
+                                                } else if (element
+                                                    is Directory) {
+                                                  playlists.add(element);
+                                                }
+                                              });
+
+                                              setState(() {});
+                                            }),
+                                      ],
+                                      child: GestureDetector(
+                                          onTap: () async {
+                                            if (!dplay ||
+                                                playfrom !=
+                                                    i.path
+                                                        .split('/')
+                                                        .reversed
+                                                        .skip(1)
+                                                        .first) {
+                                              await playerr
+                                                  .setAudioSource(Playlist!);
+                                              setState(() {
+                                                play = false;
+                                                title = i.path.split('/').last;
+                                                playerr.seek(Duration.zero,
+                                                    index: playlistFiles
+                                                        .indexOf(i));
+                                                playerr.play();
+                                                dplay = true;
+                                              });
+                                            } else {
+                                              title = i.path.split('/').last;
+                                              playerr.seek(Duration.zero,
+                                                  index:
+                                                      playlistFiles.indexOf(i));
+                                              playerr.play();
+                                            }
+                                            setState(() {
+                                              playfrom = i.path
+                                                  .split('/')
+                                                  .reversed
+                                                  .skip(1)
+                                                  .first;
+                                            });
+                                          },
+                                          child: Card(
+                                              margin: const EdgeInsets.only(
+                                                  bottom: 15),
+                                              color: dplay &&
+                                                      playerr
+                                                              .sequenceState!
+                                                              .currentSource!
+                                                              .tag
+                                                              .title ==
+                                                          i.path.split('/').last
+                                                  ? const Color(0xff3e4da0)
+                                                  : const Color(0xff141414),
+                                              child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(20),
+                                                  child: Wrap(
+                                                      spacing: 20,
+                                                      crossAxisAlignment:
+                                                          WrapCrossAlignment
+                                                              .center,
+                                                      children: [
+                                                        const CircleAvatar(
+                                                            radius: 25,
+                                                            backgroundColor:
+                                                                Colors
+                                                                    .transparent,
+                                                            child: Icon(
+                                                              Ionicons
+                                                                  .musical_notes_outline,
+                                                              color:
+                                                                  Colors.white,
+                                                              size: 40,
+                                                            )),
+                                                        SizedBox(
+                                                            width: MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .width *
+                                                                (1.7 / 3),
+                                                            child: Flex(
+                                                                direction: Axis
+                                                                    .horizontal,
+                                                                children: [
+                                                                  Expanded(
+                                                                      child:
+                                                                          RichText(
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                    maxLines: 2,
+                                                                    text: TextSpan(
+                                                                        locale: const Locale(
+                                                                            'en'),
+                                                                        text: i
+                                                                            .path
+                                                                            .split(
+                                                                                '/')
+                                                                            .last,
+                                                                        style: const TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                            height: 1.5)),
+                                                                  ))
+                                                                ]))
+                                                      ]))))),
+                                ]
+                              ]))
+                    ],
                     play
                         ? player()
                         : dplay
@@ -2196,6 +2375,16 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _isLoading = false;
     });
+  }
+
+  initPlayList(Directory d) {
+    playlistFiles = d.listSync();
+    Playlist = ConcatenatingAudioSource(children: []);
+    for (var element in playlistFiles) {
+      Playlist!.add(AudioSource.uri(Uri.file(element.path),
+          tag: MediaItem(
+              id: element.path, title: element.path.split('/').last)));
+    }
   }
 
   _createFolder() async {
