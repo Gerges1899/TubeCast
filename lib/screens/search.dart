@@ -1404,29 +1404,34 @@ class _MyHomePageState extends State<MyHomePage> {
                               children: [
                                 Padding(
                                     padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
-                                    child: TextButton(
-                                      child: Text(
-                                        '< Back to Downloands',
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontFamily: 'Gotham',
-                                            height: 1.5),
-                                      ),
-                                      onPressed: () async {
-                                        playlist = false;
-                                        await getFiles();
-                                      },
-                                    )),
-                                Padding(
-                                    padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
-                                    child: Text(
-                                      playlistFile!.path.split('/').last +
-                                          ' Playlist',
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontFamily: 'Gotham',
-                                          height: 1.5),
-                                    )),
+                                    child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            playlistFile!.path.split('/').last +
+                                                ' Playlist',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontFamily: 'Gotham',
+                                                height: 1.5),
+                                          ),
+                                          TextButton(
+                                            child: Text(
+                                              '< Downloads',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  decoration:
+                                                      TextDecoration.underline,
+                                                  fontFamily: 'Gotham',
+                                                  height: 1.5),
+                                            ),
+                                            onPressed: () async {
+                                              playlist = false;
+                                              await getFiles();
+                                            },
+                                          ),
+                                        ])),
                                 for (var i in playlistFiles) ...[
                                   FocusedMenuHolder(
                                       menuItemExtent: 45,
