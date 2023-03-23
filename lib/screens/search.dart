@@ -184,6 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        resizeToAvoidBottomInset: false,
         drawer: Builder(builder: (BuildContext context) {
           return Drawer(
             backgroundColor: Colors.black,
@@ -1238,15 +1239,120 @@ class _MyHomePageState extends State<MyHomePage> {
                                                     ]))))),
                               ]
                             ],
-                            const Padding(
-                                padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
-                                child: Text(
-                                  'All Downloads.',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontFamily: 'Gotham',
-                                      height: 1.5),
-                                )),
+                            Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'All Downloads.',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: 'Gotham',
+                                        height: 1.5),
+                                  ),
+                                  TextButton(
+                                      onPressed: () {
+                                        String playlist = '';
+                                        final GlobalKey<FormState> _formKey =
+                                            GlobalKey<FormState>();
+                                        showDialog(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                                  backgroundColor:
+                                                      Color(0xff141414),
+                                                  title: Text(
+                                                    'Add new Playlist',
+                                                    style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.white),
+                                                  ),
+                                                  content: StatefulBuilder(
+                                                    builder: (BuildContext ctx,
+                                                        StateSetter _setState) {
+                                                      return Form(
+                                                          key: _formKey,
+                                                          child: TextFormField(
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white),
+                                                            validator: (value) =>
+                                                                value!.isEmpty
+                                                                    ? 'please enter playlist name'
+                                                                    : null,
+                                                            onChanged: (value) {
+                                                              playlist = value;
+                                                              _setState(() {});
+                                                            },
+                                                            decoration:
+                                                                InputDecoration(
+                                                              hintText:
+                                                                  'playlist name',
+                                                              hintStyle: TextStyle(
+                                                                  color: Colors
+                                                                      .grey,
+                                                                  fontSize: 12),
+                                                              enabledBorder:
+                                                                  const OutlineInputBorder(
+                                                                borderSide: BorderSide(
+                                                                    width: 1,
+                                                                    color: Colors
+                                                                        .white),
+                                                              ),
+                                                              focusedBorder:
+                                                                  const OutlineInputBorder(
+                                                                borderSide: BorderSide(
+                                                                    width: 1,
+                                                                    color: Color(
+                                                                        0xff3e4da0)),
+                                                              ),
+                                                              focusedErrorBorder:
+                                                                  const OutlineInputBorder(
+                                                                borderSide:
+                                                                    BorderSide(
+                                                                        width:
+                                                                            1,
+                                                                        color: Colors
+                                                                            .red),
+                                                              ),
+                                                            ),
+                                                          ));
+                                                    },
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                        child:
+                                                            const Text("Done"),
+                                                        onPressed: () async {
+                                                          if (_formKey
+                                                              .currentState!
+                                                              .validate()) {
+                                                            Navigator.pop(ctx);
+                                                            if (!await Directory(
+                                                                    dir!.path +
+                                                                        '/${playlist}')
+                                                                .exists()) {
+                                                              Directory(dir!
+                                                                          .path +
+                                                                      '/${playlist}')
+                                                                  .create()
+                                                                  .then((value) =>
+                                                                      playlists.add(
+                                                                          value));
+                                                            }
+                                                          }
+                                                        }),
+                                                  ],
+                                                ));
+                                        setState(() {});
+                                      },
+                                      child: Text(
+                                        'Add Playlist ⊕',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: 'Gotham',
+                                            height: 1.5),
+                                      ))
+                                ]),
                             for (var i in files) ...[
                               FocusedMenuHolder(
                                   menuItemExtent: 45,
@@ -1739,37 +1845,376 @@ class _MyHomePageState extends State<MyHomePage> {
                                   iconSize: 30,
                                 ),
                                 !_isAudioDownloading
-                                    ? IconButton(
-                                        onPressed: () async {
-                                          setState(() {
-                                            _isAudioDownloading = true;
-                                            downloadIndex = current;
-                                          });
-                                          await _createFolder();
-                                          await download(
-                                              stream!.url.toString(),
-                                              "${removeUnicodeApostrophes2(playingNow!.title)}.mp3",
-                                              '');
-                                          Flushbar(
-                                            duration:
-                                                const Duration(seconds: 2),
-                                            backgroundColor:
-                                                const Color(0xff141414),
-                                            flushbarPosition:
-                                                FlushbarPosition.TOP,
-                                            title: "Tubify",
-                                            message:
-                                                "\naudio is started to download.",
-                                          ).show(context);
-                                          setState(() {
-                                            _isAudioDownloading = false;
-                                          });
-                                        },
-                                        icon: const Icon(
-                                            Ionicons.cloud_download_outline),
-                                        color: Colors.white,
-                                        iconSize: 30,
-                                      )
+                                    ? FocusedMenuHolder(
+                                        widthBorder: 0,
+                                        menuItemExtent: 45,
+                                        menuWidth:
+                                            MediaQuery.of(context).size.width /
+                                                1.35,
+                                        animateMenuItems: true,
+                                        blurSize: 0.25,
+                                        blurBackgroundColor: Colors.black54,
+                                        menuOffset: 20,
+                                        borderColor: const Color(0xff141414),
+                                        openWithTap: true,
+                                        onPressed: () {},
+                                        menuItems: <FocusedMenuItem>[
+                                          FocusedMenuItem(
+                                              backgroundColor:
+                                                  const Color(0xff141414),
+                                              title: const Text(
+                                                "Download",
+                                                style: TextStyle(
+                                                    color: Color(0xff3e4da0)),
+                                              ),
+                                              trailingIcon: const Icon(
+                                                Ionicons.cloud_download_outline,
+                                                color: Color(0xff3e4da0),
+                                              ),
+                                              onPressed: () async {
+                                                setState(() {
+                                                  _isAudioDownloading = true;
+                                                  downloadIndex = videoResult
+                                                      .indexOf(playingNow!);
+                                                });
+                                                await _createFolder();
+                                                var manifest = await yt
+                                                    .videos.streamsClient
+                                                    .getManifest(
+                                                        playingNow!.url);
+                                                var streamInfo = manifest
+                                                    .audioOnly
+                                                    .withHighestBitrate();
+                                                stream = streamInfo;
+
+                                                await download(
+                                                    stream!.url.toString(),
+                                                    "${removeUnicodeApostrophes2(playingNow!.title)}.mp3",
+                                                    '');
+                                                Flushbar(
+                                                  duration: const Duration(
+                                                      seconds: 2),
+                                                  backgroundColor:
+                                                      const Color(0xff141414),
+                                                  flushbarPosition:
+                                                      FlushbarPosition.TOP,
+                                                  title: "Tubify",
+                                                  message:
+                                                      "\naudio is started to download.",
+                                                ).show(context);
+                                                setState(() {
+                                                  _isAudioDownloading = false;
+                                                });
+                                              }),
+                                          FocusedMenuItem(
+                                              backgroundColor:
+                                                  const Color(0xff141414),
+                                              title: const Text(
+                                                "Download to an existing Playlist",
+                                                style: TextStyle(
+                                                    color: Color(0xff3e4da0)),
+                                              ),
+                                              trailingIcon: const Icon(
+                                                Ionicons.cloud_download_outline,
+                                                color: Color(0xff3e4da0),
+                                              ),
+                                              onPressed: () async {
+                                                String playlist = '';
+                                                showDialog(
+                                                    context: context,
+                                                    builder:
+                                                        (ctx) => AlertDialog(
+                                                              backgroundColor:
+                                                                  Color(
+                                                                      0xff141414),
+                                                              title: Text(
+                                                                'your playlists.',
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        14,
+                                                                    color: Colors
+                                                                        .white),
+                                                              ),
+                                                              content:
+                                                                  StatefulBuilder(
+                                                                // You need this, notice the parameters below:
+                                                                builder: (BuildContext
+                                                                        ctx,
+                                                                    StateSetter
+                                                                        _setState) {
+                                                                  return Column(
+                                                                    mainAxisSize:
+                                                                        MainAxisSize
+                                                                            .min,
+                                                                    children: [
+                                                                      for (var j
+                                                                          in playlists) ...[
+                                                                        RadioListTile(
+                                                                          activeColor:
+                                                                              Color(0xff3e4da0),
+                                                                          toggleable:
+                                                                              true,
+                                                                          title:
+                                                                              Text(
+                                                                            j.path.split('/').last,
+                                                                            style:
+                                                                                TextStyle(color: Colors.white, fontSize: 12),
+                                                                          ),
+                                                                          value: j
+                                                                              .path
+                                                                              .split('/')
+                                                                              .last,
+                                                                          groupValue:
+                                                                              playlist,
+                                                                          onChanged:
+                                                                              (value) {
+                                                                            _setState(() {
+                                                                              playlist = value.toString();
+                                                                            });
+                                                                          },
+                                                                        )
+                                                                      ],
+                                                                    ],
+                                                                  );
+                                                                },
+                                                              ),
+                                                              actions: [
+                                                                TextButton(
+                                                                    child: const Text(
+                                                                        "Done"),
+                                                                    onPressed:
+                                                                        () async {
+                                                                      Navigator
+                                                                          .pop(
+                                                                              ctx);
+                                                                      setState(
+                                                                          () {
+                                                                        _isAudioDownloading =
+                                                                            true;
+                                                                        downloadIndex =
+                                                                            videoResult.indexOf(playingNow!);
+                                                                      });
+                                                                      await _createFolder();
+                                                                      var manifest = await yt
+                                                                          .videos
+                                                                          .streamsClient
+                                                                          .getManifest(
+                                                                              playingNow!.url);
+                                                                      var streamInfo = manifest
+                                                                          .audioOnly
+                                                                          .withHighestBitrate();
+                                                                      stream =
+                                                                          streamInfo;
+
+                                                                      await download(
+                                                                          stream!
+                                                                              .url
+                                                                              .toString(),
+                                                                          "${removeUnicodeApostrophes2(playingNow!.title)}.mp3",
+                                                                          playlist);
+                                                                      Flushbar(
+                                                                        duration:
+                                                                            const Duration(seconds: 2),
+                                                                        backgroundColor:
+                                                                            const Color(0xff141414),
+                                                                        flushbarPosition:
+                                                                            FlushbarPosition.TOP,
+                                                                        title:
+                                                                            "Tubify",
+                                                                        message:
+                                                                            "\naudio is started to download.",
+                                                                      ).show(
+                                                                          context);
+                                                                      setState(
+                                                                          () {
+                                                                        _isAudioDownloading =
+                                                                            false;
+                                                                      });
+                                                                    }),
+                                                              ],
+                                                            ));
+                                              }),
+                                          FocusedMenuItem(
+                                              backgroundColor:
+                                                  const Color(0xff141414),
+                                              title: const Text(
+                                                "Download to new Playlist",
+                                                style: TextStyle(
+                                                    color: Color(0xff3e4da0)),
+                                              ),
+                                              trailingIcon: const Icon(
+                                                Ionicons.cloud_download_outline,
+                                                color: Color(0xff3e4da0),
+                                              ),
+                                              onPressed: () async {
+                                                String playlist = '';
+                                                final GlobalKey<FormState>
+                                                    _formKey =
+                                                    GlobalKey<FormState>();
+                                                showDialog(
+                                                    context: context,
+                                                    builder:
+                                                        (ctx) => AlertDialog(
+                                                              backgroundColor:
+                                                                  Color(
+                                                                      0xff141414),
+                                                              title: Text(
+                                                                'Add new Playlist',
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        14,
+                                                                    color: Colors
+                                                                        .white),
+                                                              ),
+                                                              content:
+                                                                  StatefulBuilder(
+                                                                builder: (BuildContext
+                                                                        ctx,
+                                                                    StateSetter
+                                                                        _setState) {
+                                                                  return Form(
+                                                                      key:
+                                                                          _formKey,
+                                                                      child:
+                                                                          TextFormField(
+                                                                        style: TextStyle(
+                                                                            color:
+                                                                                Colors.white),
+                                                                        validator: (value) => value!.isEmpty
+                                                                            ? 'please enter playlist name'
+                                                                            : null,
+                                                                        onChanged:
+                                                                            (value) {
+                                                                          playlist =
+                                                                              value;
+                                                                          _setState(
+                                                                              () {});
+                                                                        },
+                                                                        decoration:
+                                                                            InputDecoration(
+                                                                          hintText:
+                                                                              'playlist name',
+                                                                          hintStyle: TextStyle(
+                                                                              color: Colors.grey,
+                                                                              fontSize: 12),
+                                                                          enabledBorder:
+                                                                              const OutlineInputBorder(
+                                                                            borderSide:
+                                                                                BorderSide(width: 1, color: Colors.white),
+                                                                          ),
+                                                                          focusedBorder:
+                                                                              const OutlineInputBorder(
+                                                                            borderSide:
+                                                                                BorderSide(width: 1, color: Color(0xff3e4da0)),
+                                                                          ),
+                                                                          focusedErrorBorder:
+                                                                              const OutlineInputBorder(
+                                                                            borderSide:
+                                                                                BorderSide(width: 1, color: Colors.red),
+                                                                          ),
+                                                                        ),
+                                                                      ));
+                                                                },
+                                                              ),
+                                                              actions: [
+                                                                TextButton(
+                                                                    child: const Text(
+                                                                        "Done"),
+                                                                    onPressed:
+                                                                        () async {
+                                                                      if (_formKey
+                                                                          .currentState!
+                                                                          .validate()) {
+                                                                        Navigator.pop(
+                                                                            ctx);
+                                                                        if (!await Directory(dir!.path +
+                                                                                '/${playlist}')
+                                                                            .exists()) {
+                                                                          Directory(dir!.path + '/${playlist}')
+                                                                              .create()
+                                                                              .then((value) async {
+                                                                            setState(() {
+                                                                              _isAudioDownloading = true;
+                                                                              downloadIndex = videoResult.indexOf(playingNow!);
+                                                                            });
+                                                                            await _createFolder();
+                                                                            var manifest =
+                                                                                await yt.videos.streamsClient.getManifest(playingNow!.url);
+                                                                            var streamInfo =
+                                                                                manifest.audioOnly.withHighestBitrate();
+                                                                            stream =
+                                                                                streamInfo;
+
+                                                                            await download(
+                                                                                stream!.url.toString(),
+                                                                                "${removeUnicodeApostrophes2(playingNow!.title)}.mp3",
+                                                                                playlist);
+                                                                            Flushbar(
+                                                                              duration: const Duration(seconds: 2),
+                                                                              backgroundColor: const Color(0xff141414),
+                                                                              flushbarPosition: FlushbarPosition.TOP,
+                                                                              title: "Tubify",
+                                                                              message: "\naudio is started to download.",
+                                                                            ).show(context);
+                                                                            setState(() {
+                                                                              _isAudioDownloading = false;
+                                                                            });
+                                                                          });
+                                                                        } else {
+                                                                          setState(
+                                                                              () {
+                                                                            _isAudioDownloading =
+                                                                                true;
+                                                                            downloadIndex =
+                                                                                videoResult.indexOf(playingNow!);
+                                                                          });
+                                                                          await _createFolder();
+                                                                          var manifest = await yt
+                                                                              .videos
+                                                                              .streamsClient
+                                                                              .getManifest(playingNow!.url);
+                                                                          var streamInfo = manifest
+                                                                              .audioOnly
+                                                                              .withHighestBitrate();
+                                                                          stream =
+                                                                              streamInfo;
+
+                                                                          await download(
+                                                                              stream!.url.toString(),
+                                                                              "${removeUnicodeApostrophes2(playingNow!.title)}.mp3",
+                                                                              playlist);
+                                                                          Flushbar(
+                                                                            duration:
+                                                                                const Duration(seconds: 2),
+                                                                            backgroundColor:
+                                                                                const Color(0xff141414),
+                                                                            flushbarPosition:
+                                                                                FlushbarPosition.TOP,
+                                                                            title:
+                                                                                "Tubify",
+                                                                            message:
+                                                                                "\naudio is started to download.",
+                                                                          ).show(
+                                                                              context);
+                                                                          setState(
+                                                                              () {
+                                                                            _isAudioDownloading =
+                                                                                false;
+                                                                          });
+                                                                        }
+                                                                      }
+                                                                    }),
+                                                              ],
+                                                            ));
+                                              }),
+                                        ],
+                                        child: Padding(
+                                            padding: EdgeInsets.only(right: 11),
+                                            child: Icon(
+                                              Ionicons.cloud_download_outline,
+                                              color: Colors.white,
+                                              size: 30,
+                                            )))
                                     : const Padding(
                                         padding: EdgeInsets.only(right: 11),
                                         child: SizedBox(
