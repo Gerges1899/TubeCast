@@ -69,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Directory? dir;
   List<FileSystemEntity> files = [];
   List<FileSystemEntity> playlistFiles = [];
-  Directory? playlistFile = null;
+  Directory? playlistFile;
   List<Directory> playlists = [];
   @override
   void initState() {
@@ -77,9 +77,6 @@ class _MyHomePageState extends State<MyHomePage> {
     IsolateNameServer.registerPortWithName(
         _port.sendPort, 'downloader_send_port');
     _port.listen((dynamic data) {
-      String id = data[0];
-      DownloadTaskStatus status = data[1];
-      int progress = data[2];
       setState(() {});
     });
 
@@ -168,7 +165,7 @@ class _MyHomePageState extends State<MyHomePage> {
       url: url,
       fileName: name,
       headers: {},
-      savedDir: playlist.isEmpty ? dir!.path : dir!.path + '/${playlist}',
+      savedDir: playlist.isEmpty ? dir!.path : dir!.path + '/$playlist',
       showNotification: true,
       openFileFromNotification: false,
     );
@@ -598,8 +595,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   context: context,
                                                   builder: (ctx) => AlertDialog(
                                                         backgroundColor:
-                                                            Color(0xff141414),
-                                                        title: Text(
+                                                            const Color(
+                                                                0xff141414),
+                                                        title: const Text(
                                                           'your playlists.',
                                                           style: TextStyle(
                                                               fontSize: 14,
@@ -612,7 +610,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                           builder: (BuildContext
                                                                   ctx,
                                                               StateSetter
-                                                                  _setState) {
+                                                                  setState) {
                                                             return Column(
                                                               mainAxisSize:
                                                                   MainAxisSize
@@ -622,7 +620,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                     in playlists) ...[
                                                                   RadioListTile(
                                                                     activeColor:
-                                                                        Color(
+                                                                        const Color(
                                                                             0xff3e4da0),
                                                                     toggleable:
                                                                         true,
@@ -631,7 +629,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                           .split(
                                                                               '/')
                                                                           .last,
-                                                                      style: TextStyle(
+                                                                      style: const TextStyle(
                                                                           color: Colors
                                                                               .white,
                                                                           fontSize:
@@ -646,7 +644,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                         playlist,
                                                                     onChanged:
                                                                         (value) {
-                                                                      _setState(
+                                                                      setState(
                                                                           () {
                                                                         playlist =
                                                                             value.toString();
@@ -730,14 +728,15 @@ class _MyHomePageState extends State<MyHomePage> {
                                             onPressed: () async {
                                               String playlist = '';
                                               final GlobalKey<FormState>
-                                                  _formKey =
+                                                  formKey =
                                                   GlobalKey<FormState>();
                                               showDialog(
                                                   context: context,
                                                   builder: (ctx) => AlertDialog(
                                                         backgroundColor:
-                                                            Color(0xff141414),
-                                                        title: Text(
+                                                            const Color(
+                                                                0xff141414),
+                                                        title: const Text(
                                                           'Add new Playlist',
                                                           style: TextStyle(
                                                               fontSize: 14,
@@ -749,12 +748,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                                           builder: (BuildContext
                                                                   ctx,
                                                               StateSetter
-                                                                  _setState) {
+                                                                  setState) {
                                                             return Form(
-                                                                key: _formKey,
+                                                                key: formKey,
                                                                 child:
                                                                     TextFormField(
-                                                                  style: TextStyle(
+                                                                  style: const TextStyle(
                                                                       color: Colors
                                                                           .white),
                                                                   validator: (value) =>
@@ -765,11 +764,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                       (value) {
                                                                     playlist =
                                                                         value;
-                                                                    _setState(
+                                                                    setState(
                                                                         () {});
                                                                   },
                                                                   decoration:
-                                                                      InputDecoration(
+                                                                      const InputDecoration(
                                                                     hintText:
                                                                         'playlist name',
                                                                     hintStyle: TextStyle(
@@ -778,7 +777,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                         fontSize:
                                                                             12),
                                                                     enabledBorder:
-                                                                        const OutlineInputBorder(
+                                                                        OutlineInputBorder(
                                                                       borderSide: BorderSide(
                                                                           width:
                                                                               1,
@@ -786,7 +785,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                               Colors.white),
                                                                     ),
                                                                     focusedBorder:
-                                                                        const OutlineInputBorder(
+                                                                        OutlineInputBorder(
                                                                       borderSide: BorderSide(
                                                                           width:
                                                                               1,
@@ -794,7 +793,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                               Color(0xff3e4da0)),
                                                                     ),
                                                                     focusedErrorBorder:
-                                                                        const OutlineInputBorder(
+                                                                        OutlineInputBorder(
                                                                       borderSide: BorderSide(
                                                                           width:
                                                                               1,
@@ -811,17 +810,17 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                   "Done"),
                                                               onPressed:
                                                                   () async {
-                                                                if (_formKey
+                                                                if (formKey
                                                                     .currentState!
                                                                     .validate()) {
                                                                   Navigator.pop(
                                                                       ctx);
                                                                   if (!await Directory(
                                                                           dir!.path +
-                                                                              '/${playlist}')
+                                                                              '/$playlist')
                                                                       .exists()) {
                                                                     Directory(dir!.path +
-                                                                            '/${playlist}')
+                                                                            '/$playlist')
                                                                         .create()
                                                                         .then(
                                                                             (value) async {
@@ -1094,7 +1093,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   )))))
                                 ],
                                 if (play || dplay) ...[
-                                  SizedBox(
+                                  const SizedBox(
                                     height: 80,
                                   )
                                 ]
@@ -1113,7 +1112,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: ListView(
                           padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
                           children: [
-                            if (playlists.length > 0) ...[
+                            if (playlists.isNotEmpty) ...[
                               const Padding(
                                   padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
                                   child: Text(
@@ -1124,7 +1123,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         height: 1.5),
                                   ))
                             ],
-                            if (playlists.length > 0) ...[
+                            if (playlists.isNotEmpty) ...[
                               for (var i in playlists) ...[
                                 FocusedMenuHolder(
                                     menuItemExtent: 45,
@@ -1153,9 +1152,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                           ),
                                           onPressed: () async {
                                             if (Directory(i.path)
-                                                    .listSync()
-                                                    .length >
-                                                0) {
+                                                .listSync()
+                                                .isNotEmpty) {
                                               Directory(i.path)
                                                   .listSync()
                                                   .forEach((element) async {
@@ -1166,9 +1164,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                             }
                                             await Directory(i.path).delete();
                                             await getFiles();
-                                            playerr.setAudioSource(Playlist!);
                                             dplay = play = false;
                                             playerr.stop();
+                                            await playerr
+                                                .setAudioSource(Playlist!);
 
                                             setState(() {});
                                           }),
@@ -1243,7 +1242,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
+                                  const Text(
                                     'All Downloads.',
                                     style: TextStyle(
                                         color: Colors.white,
@@ -1253,14 +1252,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                   TextButton(
                                       onPressed: () {
                                         String playlist = '';
-                                        final GlobalKey<FormState> _formKey =
+                                        final GlobalKey<FormState> formKey0 =
                                             GlobalKey<FormState>();
                                         showDialog(
                                             context: context,
                                             builder: (ctx) => AlertDialog(
                                                   backgroundColor:
-                                                      Color(0xff141414),
-                                                  title: Text(
+                                                      const Color(0xff141414),
+                                                  title: const Text(
                                                     'Add new Playlist',
                                                     style: TextStyle(
                                                         fontSize: 14,
@@ -1268,23 +1267,24 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   ),
                                                   content: StatefulBuilder(
                                                     builder: (BuildContext ctx,
-                                                        StateSetter _setState) {
+                                                        StateSetter setState) {
                                                       return Form(
-                                                          key: _formKey,
+                                                          key: formKey0,
                                                           child: TextFormField(
-                                                            style: TextStyle(
-                                                                color: Colors
-                                                                    .white),
+                                                            style:
+                                                                const TextStyle(
+                                                                    color: Colors
+                                                                        .white),
                                                             validator: (value) =>
                                                                 value!.isEmpty
                                                                     ? 'please enter playlist name'
                                                                     : null,
                                                             onChanged: (value) {
                                                               playlist = value;
-                                                              _setState(() {});
+                                                              setState(() {});
                                                             },
                                                             decoration:
-                                                                InputDecoration(
+                                                                const InputDecoration(
                                                               hintText:
                                                                   'playlist name',
                                                               hintStyle: TextStyle(
@@ -1292,21 +1292,21 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                       .grey,
                                                                   fontSize: 12),
                                                               enabledBorder:
-                                                                  const OutlineInputBorder(
+                                                                  OutlineInputBorder(
                                                                 borderSide: BorderSide(
                                                                     width: 1,
                                                                     color: Colors
                                                                         .white),
                                                               ),
                                                               focusedBorder:
-                                                                  const OutlineInputBorder(
+                                                                  OutlineInputBorder(
                                                                 borderSide: BorderSide(
                                                                     width: 1,
                                                                     color: Color(
                                                                         0xff3e4da0)),
                                                               ),
                                                               focusedErrorBorder:
-                                                                  const OutlineInputBorder(
+                                                                  OutlineInputBorder(
                                                                 borderSide:
                                                                     BorderSide(
                                                                         width:
@@ -1323,17 +1323,17 @@ class _MyHomePageState extends State<MyHomePage> {
                                                         child:
                                                             const Text("Done"),
                                                         onPressed: () async {
-                                                          if (_formKey
+                                                          if (formKey0
                                                               .currentState!
                                                               .validate()) {
                                                             Navigator.pop(ctx);
                                                             if (!await Directory(
                                                                     dir!.path +
-                                                                        '/${playlist}')
+                                                                        '/$playlist')
                                                                 .exists()) {
                                                               Directory(dir!
                                                                           .path +
-                                                                      '/${playlist}')
+                                                                      '/$playlist')
                                                                   .create()
                                                                   .then((value) =>
                                                                       playlists.add(
@@ -1345,7 +1345,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 ));
                                         setState(() {});
                                       },
-                                      child: Text(
+                                      child: const Text(
                                         'Add Playlist ⊕',
                                         style: TextStyle(
                                             color: Colors.white,
@@ -1357,7 +1357,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               FocusedMenuHolder(
                                   menuItemExtent: 45,
                                   menuWidth:
-                                      MediaQuery.of(context).size.width * 0.50,
+                                      MediaQuery.of(context).size.width * 0.60,
                                   animateMenuItems: true,
                                   blurSize: 0.25,
                                   blurBackgroundColor: Colors.black54,
@@ -1366,6 +1366,256 @@ class _MyHomePageState extends State<MyHomePage> {
                                   openWithTap: false,
                                   onPressed: () {},
                                   menuItems: <FocusedMenuItem>[
+                                    FocusedMenuItem(
+                                        backgroundColor:
+                                            const Color(0xff141414),
+                                        title: const Text(
+                                          "Move to a new playlist",
+                                          style: TextStyle(
+                                              color: Color(0xff3e4da0)),
+                                        ),
+                                        trailingIcon: const Icon(
+                                          Icons.move_up_outlined,
+                                          color: Color(0xff3e4da0),
+                                        ),
+                                        onPressed: () async {
+                                          bool pl = false;
+                                          if (playerr.sequenceState != null) {
+                                            pl = i.path.split('/').last ==
+                                                playerr.sequenceState!
+                                                    .currentSource!.tag.title;
+                                            if (pl) {
+                                              playerr.stop();
+                                              dplay = false;
+                                            }
+                                            Playlist!
+                                                .removeAt(files.indexOf(i));
+                                          }
+                                          String playlist = '';
+
+                                          final GlobalKey<FormState> formKey1 =
+                                              GlobalKey<FormState>();
+                                          showDialog(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                    backgroundColor:
+                                                        const Color(0xff141414),
+                                                    title: const Text(
+                                                      'Add new Playlist',
+                                                      style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: Colors.white),
+                                                    ),
+                                                    content: StatefulBuilder(
+                                                      builder:
+                                                          (BuildContext ctx,
+                                                              StateSetter
+                                                                  setState) {
+                                                        return Form(
+                                                            key: formKey1,
+                                                            child:
+                                                                TextFormField(
+                                                              style: const TextStyle(
+                                                                  color: Colors
+                                                                      .white),
+                                                              validator: (value) =>
+                                                                  value!.isEmpty
+                                                                      ? 'please enter playlist name'
+                                                                      : null,
+                                                              onChanged:
+                                                                  (value) {
+                                                                playlist =
+                                                                    value;
+                                                                setState(() {});
+                                                              },
+                                                              decoration:
+                                                                  const InputDecoration(
+                                                                hintText:
+                                                                    'playlist name',
+                                                                hintStyle: TextStyle(
+                                                                    color: Colors
+                                                                        .grey,
+                                                                    fontSize:
+                                                                        12),
+                                                                enabledBorder:
+                                                                    OutlineInputBorder(
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                          width:
+                                                                              1,
+                                                                          color:
+                                                                              Colors.white),
+                                                                ),
+                                                                focusedBorder:
+                                                                    OutlineInputBorder(
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                          width:
+                                                                              1,
+                                                                          color:
+                                                                              Color(0xff3e4da0)),
+                                                                ),
+                                                                focusedErrorBorder:
+                                                                    OutlineInputBorder(
+                                                                  borderSide:
+                                                                      BorderSide(
+                                                                          width:
+                                                                              1,
+                                                                          color:
+                                                                              Colors.red),
+                                                                ),
+                                                              ),
+                                                            ));
+                                                      },
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                          child: const Text(
+                                                              "Done"),
+                                                          onPressed: () async {
+                                                            if (formKey1
+                                                                .currentState!
+                                                                .validate()) {
+                                                              // Navigator.pop(
+                                                              //     ctx);
+                                                              if (!await Directory(
+                                                                      dir!.path +
+                                                                          '/$playlist')
+                                                                  .exists()) {
+                                                                Directory(dir!
+                                                                            .path +
+                                                                        '/$playlist')
+                                                                    .create()
+                                                                    .then(
+                                                                        (value) async {
+                                                                  Navigator.pop(
+                                                                      ctx);
+                                                                  await File(i
+                                                                          .path)
+                                                                      .rename(
+                                                                          '${value.path}/${i.path.split('/').last}')
+                                                                      .then(
+                                                                          (value) async {
+                                                                    await getFiles();
+                                                                    dplay = play =
+                                                                        false;
+                                                                    if (playerr
+                                                                        .playing) {
+                                                                      playerr
+                                                                          .stop();
+                                                                    }
+                                                                    await playerr
+                                                                        .setAudioSource(
+                                                                            Playlist!);
+                                                                  });
+                                                                });
+                                                              }
+                                                            }
+                                                          })
+                                                    ],
+                                                  ));
+                                          setState(() {});
+                                        }),
+                                    FocusedMenuItem(
+                                        backgroundColor:
+                                            const Color(0xff141414),
+                                        title: const Text(
+                                          "Move to a playlist",
+                                          style: TextStyle(
+                                              color: Color(0xff3e4da0)),
+                                        ),
+                                        trailingIcon: const Icon(
+                                          Icons.move_up_outlined,
+                                          color: Color(0xff3e4da0),
+                                        ),
+                                        onPressed: () async {
+                                          String playlist = '';
+                                          showDialog(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                    backgroundColor:
+                                                        const Color(0xff141414),
+                                                    title: const Text(
+                                                      'your playlists.',
+                                                      style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: Colors.white),
+                                                    ),
+                                                    content: StatefulBuilder(
+                                                      builder:
+                                                          (BuildContext ctx,
+                                                              StateSetter
+                                                                  setState) {
+                                                        return Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            for (var j
+                                                                in playlists) ...[
+                                                              RadioListTile(
+                                                                activeColor:
+                                                                    const Color(
+                                                                        0xff3e4da0),
+                                                                toggleable:
+                                                                    true,
+                                                                title: Text(
+                                                                  j.path
+                                                                      .split(
+                                                                          '/')
+                                                                      .last,
+                                                                  style: const TextStyle(
+                                                                      color: Colors
+                                                                          .white,
+                                                                      fontSize:
+                                                                          12),
+                                                                ),
+                                                                value: j.path
+                                                                    .split('/')
+                                                                    .last,
+                                                                groupValue:
+                                                                    playlist,
+                                                                onChanged:
+                                                                    (value) {
+                                                                  setState(() {
+                                                                    playlist = value
+                                                                        .toString();
+                                                                  });
+                                                                },
+                                                              )
+                                                            ],
+                                                          ],
+                                                        );
+                                                      },
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                          child: const Text(
+                                                              "Done"),
+                                                          onPressed: () async {
+                                                            Navigator.pop(ctx);
+                                                            await File(i.path)
+                                                                .rename(
+                                                                    '${dir!.path}/$playlist/${i.path.split('/').last}')
+                                                                .then(
+                                                                    (value) async {
+                                                              await getFiles();
+                                                              dplay =
+                                                                  play = false;
+                                                              if (playerr
+                                                                  .playing) {
+                                                                playerr.stop();
+                                                              }
+                                                              await playerr
+                                                                  .setAudioSource(
+                                                                      Playlist!);
+
+                                                              setState(() {});
+                                                            });
+                                                          }),
+                                                    ],
+                                                  ));
+                                          setState(() {});
+                                        }),
                                     FocusedMenuItem(
                                         backgroundColor:
                                             const Color(0xff141414),
@@ -1404,13 +1654,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                               playlists.add(element);
                                             }
                                           });
-
                                           setState(() {});
                                         }),
                                   ],
                                   child: GestureDetector(
                                       onTap: () async {
                                         if (!dplay || playfrom != 'downloads') {
+                                          playerr.stop();
                                           await playerr
                                               .setAudioSource(Playlist!);
                                           setState(() {
@@ -1495,7 +1745,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   ]))))),
                             ],
                             if (dplay || play) ...[
-                              SizedBox(
+                              const SizedBox(
                                 height: 80,
                               )
                             ]
@@ -1509,7 +1759,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
                               children: [
                                 Padding(
-                                    padding: EdgeInsets.fromLTRB(0, 10, 0, 15),
+                                    padding:
+                                        const EdgeInsets.fromLTRB(0, 10, 0, 15),
                                     child: Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
@@ -1517,13 +1768,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                           Text(
                                             playlistFile!.path.split('/').last +
                                                 ' Playlist',
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                                 color: Colors.white,
                                                 fontFamily: 'Gotham',
                                                 height: 1.5),
                                           ),
                                           TextButton(
-                                            child: Text(
+                                            child: const Text(
                                               '< Downloads',
                                               style: TextStyle(
                                                   color: Colors.white,
@@ -1543,7 +1794,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       menuItemExtent: 45,
                                       menuWidth:
                                           MediaQuery.of(context).size.width *
-                                              0.50,
+                                              0.7,
                                       animateMenuItems: true,
                                       blurSize: 0.25,
                                       blurBackgroundColor: Colors.black54,
@@ -1552,6 +1803,352 @@ class _MyHomePageState extends State<MyHomePage> {
                                       openWithTap: false,
                                       onPressed: () {},
                                       menuItems: <FocusedMenuItem>[
+                                        FocusedMenuItem(
+                                            backgroundColor:
+                                                const Color(0xff141414),
+                                            title: const Text(
+                                              "Remove from this playlist",
+                                              style: TextStyle(
+                                                  color: Color(0xff3e4da0)),
+                                            ),
+                                            trailingIcon: const Icon(
+                                              Ionicons.remove_circle_outline,
+                                              color: Color(0xff3e4da0),
+                                            ),
+                                            onPressed: () async {
+                                              String playlist = '';
+                                              await showDialog(
+                                                  context: context,
+                                                  builder: (ctx) => AlertDialog(
+                                                        backgroundColor:
+                                                            const Color(
+                                                                0xff141414),
+                                                        content:
+                                                            StatefulBuilder(
+                                                          builder: (BuildContext
+                                                                  ctx,
+                                                              StateSetter
+                                                                  setState) {
+                                                            return Text(
+                                                              'Are you sure you want to remove this audio from $playlist playlist ?',
+                                                              style: const TextStyle(
+                                                                  height: 1.5,
+                                                                  fontSize: 14,
+                                                                  color: Colors
+                                                                      .white),
+                                                            );
+                                                          },
+                                                        ),
+                                                        actions: [
+                                                          TextButton(
+                                                              child: const Text(
+                                                                  "Cancel"),
+                                                              onPressed:
+                                                                  () async {
+                                                                Navigator.pop(
+                                                                    ctx);
+                                                              }),
+                                                          TextButton(
+                                                              child: const Text(
+                                                                  "Done"),
+                                                              onPressed:
+                                                                  () async {
+                                                                Navigator.pop(
+                                                                    ctx);
+                                                                await File(
+                                                                        i.path)
+                                                                    .rename(
+                                                                        '${dir!.path}/${i.path.split('/').last}')
+                                                                    .then(
+                                                                        (value) async {
+                                                                  await getFiles();
+                                                                  dplay = play =
+                                                                      false;
+                                                                  if (playerr
+                                                                      .playing) {
+                                                                    playerr
+                                                                        .stop();
+                                                                  }
+                                                                  initPlayList(
+                                                                      playlistFile!);
+                                                                  await playerr
+                                                                      .setAudioSource(
+                                                                          Playlist!);
+
+                                                                  setState(
+                                                                      () {});
+                                                                });
+                                                              }),
+                                                        ],
+                                                      ));
+                                              setState(() {});
+                                            }),
+                                        FocusedMenuItem(
+                                            backgroundColor:
+                                                const Color(0xff141414),
+                                            title: const Text(
+                                              "Move to a new playlist",
+                                              style: TextStyle(
+                                                  color: Color(0xff3e4da0)),
+                                            ),
+                                            trailingIcon: const Icon(
+                                              Icons.move_up_outlined,
+                                              color: Color(0xff3e4da0),
+                                            ),
+                                            onPressed: () async {
+                                              bool pl = false;
+                                              if (playerr.sequenceState !=
+                                                  null) {
+                                                pl = i.path.split('/').last ==
+                                                    playerr
+                                                        .sequenceState!
+                                                        .currentSource!
+                                                        .tag
+                                                        .title;
+                                                if (pl) {
+                                                  playerr.stop();
+                                                  dplay = false;
+                                                }
+                                                Playlist!
+                                                    .removeAt(files.indexOf(i));
+                                              }
+                                              String playlist = '';
+
+                                              final GlobalKey<FormState>
+                                                  formKey2 =
+                                                  GlobalKey<FormState>();
+                                              await showDialog(
+                                                  context: context,
+                                                  builder: (ctx) => AlertDialog(
+                                                        backgroundColor:
+                                                            const Color(
+                                                                0xff141414),
+                                                        title: const Text(
+                                                          'Add new Playlist',
+                                                          style: TextStyle(
+                                                              fontSize: 14,
+                                                              color:
+                                                                  Colors.white),
+                                                        ),
+                                                        content:
+                                                            StatefulBuilder(
+                                                          builder: (BuildContext
+                                                                  ctx,
+                                                              StateSetter
+                                                                  setState) {
+                                                            return Form(
+                                                                key: formKey2,
+                                                                child:
+                                                                    TextFormField(
+                                                                  style: const TextStyle(
+                                                                      color: Colors
+                                                                          .white),
+                                                                  validator: (value) =>
+                                                                      value!.isEmpty
+                                                                          ? 'please enter playlist name'
+                                                                          : null,
+                                                                  onChanged:
+                                                                      (value) {
+                                                                    playlist =
+                                                                        value;
+                                                                    setState(
+                                                                        () {});
+                                                                  },
+                                                                  decoration:
+                                                                      const InputDecoration(
+                                                                    hintText:
+                                                                        'playlist name',
+                                                                    hintStyle: TextStyle(
+                                                                        color: Colors
+                                                                            .grey,
+                                                                        fontSize:
+                                                                            12),
+                                                                    enabledBorder:
+                                                                        OutlineInputBorder(
+                                                                      borderSide: BorderSide(
+                                                                          width:
+                                                                              1,
+                                                                          color:
+                                                                              Colors.white),
+                                                                    ),
+                                                                    focusedBorder:
+                                                                        OutlineInputBorder(
+                                                                      borderSide: BorderSide(
+                                                                          width:
+                                                                              1,
+                                                                          color:
+                                                                              Color(0xff3e4da0)),
+                                                                    ),
+                                                                    focusedErrorBorder:
+                                                                        OutlineInputBorder(
+                                                                      borderSide: BorderSide(
+                                                                          width:
+                                                                              1,
+                                                                          color:
+                                                                              Colors.red),
+                                                                    ),
+                                                                  ),
+                                                                ));
+                                                          },
+                                                        ),
+                                                        actions: [
+                                                          TextButton(
+                                                              child: const Text(
+                                                                  "Done"),
+                                                              onPressed:
+                                                                  () async {
+                                                                if (formKey2
+                                                                    .currentState!
+                                                                    .validate()) {
+                                                                  // Navigator.pop(
+                                                                  //     ctx);
+                                                                  if (!await Directory(
+                                                                          dir!.path +
+                                                                              '/$playlist')
+                                                                      .exists()) {
+                                                                    Directory(dir!.path +
+                                                                            '/$playlist')
+                                                                        .create()
+                                                                        .then(
+                                                                            (value) async {
+                                                                      Navigator
+                                                                          .pop(
+                                                                              ctx);
+                                                                      await File(i
+                                                                              .path)
+                                                                          .rename(
+                                                                              '${value.path}/${i.path.split('/').last}')
+                                                                          .then(
+                                                                              (value) async {
+                                                                        await getFiles();
+                                                                        dplay = play =
+                                                                            false;
+                                                                        playerr
+                                                                            .stop();
+                                                                        initPlayList(
+                                                                            playlistFile!);
+                                                                        await playerr
+                                                                            .setAudioSource(Playlist!);
+                                                                      });
+                                                                    });
+                                                                  }
+                                                                }
+                                                              })
+                                                        ],
+                                                      ));
+                                              setState(() {});
+                                            }),
+                                        FocusedMenuItem(
+                                            backgroundColor:
+                                                const Color(0xff141414),
+                                            title: const Text(
+                                              "Move to a playlist",
+                                              style: TextStyle(
+                                                  color: Color(0xff3e4da0)),
+                                            ),
+                                            trailingIcon: const Icon(
+                                              Icons.move_up_outlined,
+                                              color: Color(0xff3e4da0),
+                                            ),
+                                            onPressed: () async {
+                                              String playlist = '';
+                                              await showDialog(
+                                                  context: context,
+                                                  builder: (ctx) => AlertDialog(
+                                                        backgroundColor:
+                                                            const Color(
+                                                                0xff141414),
+                                                        title: const Text(
+                                                          'your playlists.',
+                                                          style: TextStyle(
+                                                              fontSize: 14,
+                                                              color:
+                                                                  Colors.white),
+                                                        ),
+                                                        content:
+                                                            StatefulBuilder(
+                                                          builder: (BuildContext
+                                                                  ctx,
+                                                              StateSetter
+                                                                  setState) {
+                                                            return Column(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              children: [
+                                                                for (var j
+                                                                    in playlists) ...[
+                                                                  RadioListTile(
+                                                                    activeColor:
+                                                                        const Color(
+                                                                            0xff3e4da0),
+                                                                    toggleable:
+                                                                        true,
+                                                                    title: Text(
+                                                                      j.path
+                                                                          .split(
+                                                                              '/')
+                                                                          .last,
+                                                                      style: const TextStyle(
+                                                                          color: Colors
+                                                                              .white,
+                                                                          fontSize:
+                                                                              12),
+                                                                    ),
+                                                                    value: j
+                                                                        .path
+                                                                        .split(
+                                                                            '/')
+                                                                        .last,
+                                                                    groupValue:
+                                                                        playlist,
+                                                                    onChanged:
+                                                                        (value) {
+                                                                      setState(
+                                                                          () {
+                                                                        playlist =
+                                                                            value.toString();
+                                                                      });
+                                                                    },
+                                                                  )
+                                                                ],
+                                                              ],
+                                                            );
+                                                          },
+                                                        ),
+                                                        actions: [
+                                                          TextButton(
+                                                              child: const Text(
+                                                                  "Done"),
+                                                              onPressed:
+                                                                  () async {
+                                                                Navigator.pop(
+                                                                    ctx);
+                                                                await File(
+                                                                        i.path)
+                                                                    .rename(
+                                                                        '${dir!.path}/$playlist/${i.path.split('/').last}')
+                                                                    .then(
+                                                                        (value) async {
+                                                                  await getFiles();
+                                                                  dplay = play =
+                                                                      false;
+                                                                  playerr
+                                                                      .stop();
+                                                                  initPlayList(
+                                                                      playlistFile!);
+                                                                  await playerr
+                                                                      .setAudioSource(
+                                                                          Playlist!);
+
+                                                                  setState(
+                                                                      () {});
+                                                                });
+                                                              }),
+                                                        ],
+                                                      ));
+                                              setState(() {});
+                                            }),
                                         FocusedMenuItem(
                                             backgroundColor:
                                                 const Color(0xff141414),
@@ -1699,6 +2296,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                   ))
                                                                 ]))
                                                       ]))))),
+                                ],
+                                if (play || dplay) ...[
+                                  const SizedBox(
+                                    height: 80,
+                                  )
                                 ]
                               ]))
                     ],
@@ -1712,14 +2314,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   String removeUnicodeApostrophes(String strInput) {
-    String strModified = strInput.replaceAll('&#39;', "\'");
+    String strModified = strInput.replaceAll('&#39;', "'");
     strModified = strModified.replaceAll('&quot;', "");
     strModified = strModified.replaceAll('&amp;', "&");
     return strModified;
   }
 
   String removeUnicodeApostrophes2(String strInput) {
-    String strModified = strInput.replaceAll('&#39;', "\'");
+    String strModified = strInput.replaceAll('&#39;', "'");
     strModified = strModified.replaceAll('&quot;', "");
     strModified = strModified.replaceAll('&amp;', "&");
     strModified = strModified.replaceAll('/', "-");
@@ -1925,9 +2527,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                                     builder:
                                                         (ctx) => AlertDialog(
                                                               backgroundColor:
-                                                                  Color(
+                                                                  const Color(
                                                                       0xff141414),
-                                                              title: Text(
+                                                              title: const Text(
                                                                 'your playlists.',
                                                                 style: TextStyle(
                                                                     fontSize:
@@ -1941,7 +2543,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                 builder: (BuildContext
                                                                         ctx,
                                                                     StateSetter
-                                                                        _setState) {
+                                                                        setState) {
                                                                   return Column(
                                                                     mainAxisSize:
                                                                         MainAxisSize
@@ -1951,14 +2553,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                           in playlists) ...[
                                                                         RadioListTile(
                                                                           activeColor:
-                                                                              Color(0xff3e4da0),
+                                                                              const Color(0xff3e4da0),
                                                                           toggleable:
                                                                               true,
                                                                           title:
                                                                               Text(
                                                                             j.path.split('/').last,
                                                                             style:
-                                                                                TextStyle(color: Colors.white, fontSize: 12),
+                                                                                const TextStyle(color: Colors.white, fontSize: 12),
                                                                           ),
                                                                           value: j
                                                                               .path
@@ -1968,7 +2570,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                               playlist,
                                                                           onChanged:
                                                                               (value) {
-                                                                            _setState(() {
+                                                                            setState(() {
                                                                               playlist = value.toString();
                                                                             });
                                                                           },
@@ -2049,16 +2651,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                               onPressed: () async {
                                                 String playlist = '';
                                                 final GlobalKey<FormState>
-                                                    _formKey =
+                                                    formKey =
                                                     GlobalKey<FormState>();
                                                 showDialog(
                                                     context: context,
                                                     builder:
                                                         (ctx) => AlertDialog(
                                                               backgroundColor:
-                                                                  Color(
+                                                                  const Color(
                                                                       0xff141414),
-                                                              title: Text(
+                                                              title: const Text(
                                                                 'Add new Playlist',
                                                                 style: TextStyle(
                                                                     fontSize:
@@ -2071,13 +2673,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                 builder: (BuildContext
                                                                         ctx,
                                                                     StateSetter
-                                                                        _setState) {
+                                                                        setState) {
                                                                   return Form(
                                                                       key:
-                                                                          _formKey,
+                                                                          formKey,
                                                                       child:
                                                                           TextFormField(
-                                                                        style: TextStyle(
+                                                                        style: const TextStyle(
                                                                             color:
                                                                                 Colors.white),
                                                                         validator: (value) => value!.isEmpty
@@ -2087,28 +2689,28 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                             (value) {
                                                                           playlist =
                                                                               value;
-                                                                          _setState(
+                                                                          setState(
                                                                               () {});
                                                                         },
                                                                         decoration:
-                                                                            InputDecoration(
+                                                                            const InputDecoration(
                                                                           hintText:
                                                                               'playlist name',
                                                                           hintStyle: TextStyle(
                                                                               color: Colors.grey,
                                                                               fontSize: 12),
                                                                           enabledBorder:
-                                                                              const OutlineInputBorder(
+                                                                              OutlineInputBorder(
                                                                             borderSide:
                                                                                 BorderSide(width: 1, color: Colors.white),
                                                                           ),
                                                                           focusedBorder:
-                                                                              const OutlineInputBorder(
+                                                                              OutlineInputBorder(
                                                                             borderSide:
                                                                                 BorderSide(width: 1, color: Color(0xff3e4da0)),
                                                                           ),
                                                                           focusedErrorBorder:
-                                                                              const OutlineInputBorder(
+                                                                              OutlineInputBorder(
                                                                             borderSide:
                                                                                 BorderSide(width: 1, color: Colors.red),
                                                                           ),
@@ -2122,15 +2724,15 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                         "Done"),
                                                                     onPressed:
                                                                         () async {
-                                                                      if (_formKey
+                                                                      if (formKey
                                                                           .currentState!
                                                                           .validate()) {
                                                                         Navigator.pop(
                                                                             ctx);
                                                                         if (!await Directory(dir!.path +
-                                                                                '/${playlist}')
+                                                                                '/$playlist')
                                                                             .exists()) {
-                                                                          Directory(dir!.path + '/${playlist}')
+                                                                          Directory(dir!.path + '/$playlist')
                                                                               .create()
                                                                               .then((value) async {
                                                                             setState(() {
@@ -2208,7 +2810,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                             ));
                                               }),
                                         ],
-                                        child: Padding(
+                                        child: const Padding(
                                             padding: EdgeInsets.only(right: 11),
                                             child: Icon(
                                               Ionicons.cloud_download_outline,
@@ -2294,11 +2896,6 @@ class _MyHomePageState extends State<MyHomePage> {
                               final durationState = snapshot.data;
                               final progress =
                                   durationState?.progress ?? Duration.zero;
-                              final buffered =
-                                  durationState?.buffered ?? Duration.zero;
-                              final total = durationState?.total ??
-                                  playerr.duration ??
-                                  Duration.zero;
 
                               return Padding(
                                   padding: EdgeInsets.only(
@@ -2326,7 +2923,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 setState(() {
                                                   _isAudioLoading = true;
                                                   current = current;
-                                                  playerr.stop();
+                                                  if (playerr.playing) {
+                                                    playerr.stop();
+                                                  }
                                                 });
                                                 var manifest = await yt
                                                     .videos.streamsClient
@@ -2422,7 +3021,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                               setState(() {
                                                 _isAudioLoading = true;
                                                 current = current;
-                                                playerr.stop();
+                                                if (playerr.playing) {
+                                                  playerr.stop();
+                                                }
                                               });
                                               var manifest = await yt
                                                   .videos.streamsClient
@@ -2631,7 +3232,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               final durationState = snapshot.data;
                               final progress =
                                   durationState?.progress ?? Duration.zero;
-                              final buffered = Duration.zero;
+                              const buffered = Duration.zero;
                               final total = durationState?.total ??
                                   playerr.duration ??
                                   Duration.zero;
@@ -2669,10 +3270,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                 final durationState = snapshot.data;
                                 final progress =
                                     durationState?.progress ?? Duration.zero;
-                                final buffered = Duration.zero;
-                                final total = durationState?.total ??
-                                    playerr.duration ??
-                                    Duration.zero;
 
                                 return Padding(
                                     padding: EdgeInsets.only(
